@@ -28,10 +28,7 @@ export default async function HomePage() {
   return (
     <div className="pb-24">
       <section className="section-space shell">
-        <div className="premium-card-dark soft-grid relative overflow-hidden px-8 py-12 md:px-12 md:py-16">
-          <div className="absolute -right-24 top-10 h-64 w-64 rounded-full bg-[rgba(95,159,162,0.18)] blur-3xl" />
-          <div className="absolute bottom-0 left-0 h-48 w-72 rounded-full bg-[rgba(191,142,52,0.14)] blur-3xl" />
-
+        <div className="premium-card-dark relative overflow-hidden px-8 py-12 md:px-12 md:py-16">
           <div className="relative grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
             <div>
               <p className="text-xs uppercase tracking-[0.32em] text-emerald-200">
@@ -40,7 +37,7 @@ export default async function HomePage() {
               <h1 className="mt-6 max-w-4xl text-5xl leading-[0.95] text-white md:text-7xl [font-family:var(--font-heading)]">
                 Plan Pakistan with the clarity of a route map and the feeling of a travel journal.
               </h1>
-              <p className="mt-6 max-w-2xl text-base leading-8 text-slate-300">
+              <p className="mt-6 max-w-2xl text-base leading-8 text-slate-100">
                 PakVoyage helps you discover destinations, generate practical itineraries,
                 estimate costs, and shape a more confident trip across Pakistan.
               </p>
@@ -49,7 +46,10 @@ export default async function HomePage() {
                 <Link href="/planner" className="cta-primary">
                   Start your itinerary
                 </Link>
-                <a href="#destinations" className="cta-secondary border-white/15 bg-white/5 text-white hover:bg-white/10">
+                <a
+                  href="#destinations"
+                  className="inline-flex items-center justify-center rounded-full border border-white/18 bg-white/10 px-6 py-3 text-sm font-semibold text-white transition duration-300 hover:bg-white/16"
+                >
                   Explore destinations
                 </a>
               </div>
@@ -78,12 +78,12 @@ export default async function HomePage() {
               ].map((item) => (
                 <div
                   key={item.title}
-                  className="rounded-[26px] border border-white/10 bg-white/5 p-6 backdrop-blur"
+                  className="rounded-[26px] border border-white/12 bg-black/15 p-6"
                 >
                   <h2 className="text-2xl text-white [font-family:var(--font-heading)]">
                     {item.title}
                   </h2>
-                  <p className="mt-3 text-sm leading-7 text-slate-300">{item.body}</p>
+                  <p className="mt-3 text-sm leading-7 text-slate-100">{item.body}</p>
                 </div>
               ))}
             </div>
@@ -105,7 +105,7 @@ export default async function HomePage() {
               'Practical cost visibility for real-world decision making',
               'Mobile-friendly flow designed for quick planning',
             ].map((item) => (
-              <div key={item} className="premium-card px-5 py-6 text-sm leading-7 text-slate-700">
+              <div key={item} className="premium-card px-5 py-6 text-sm leading-7 text-slate-800">
                 {item}
               </div>
             ))}
@@ -164,14 +164,14 @@ export default async function HomePage() {
               text: 'Compare cost breakdowns, explore destination pages, and save the plan.',
             },
           ].map((item) => (
-            <div key={item.step} className="rounded-[28px] border border-slate-200 bg-white/70 p-6">
+            <div key={item.step} className="rounded-[28px] border border-slate-200 bg-white p-6">
               <p className="text-xs uppercase tracking-[0.28em] text-[var(--emerald)]">
                 Step {item.step}
               </p>
               <h3 className="mt-4 text-2xl text-slate-950 [font-family:var(--font-heading)]">
                 {item.title}
               </h3>
-              <p className="mt-4 text-sm leading-7 text-slate-600">{item.text}</p>
+              <p className="mt-4 text-sm leading-7 text-slate-700">{item.text}</p>
             </div>
           ))}
         </div>

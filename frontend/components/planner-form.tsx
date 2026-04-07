@@ -106,7 +106,7 @@ export function PlannerForm() {
 
   return (
     <div className="shell py-16">
-      <div className="premium-card-dark soft-grid overflow-hidden p-8 md:p-10">
+      <div className="premium-card-dark overflow-hidden p-8 md:p-10">
         <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-emerald-200">
@@ -115,29 +115,29 @@ export function PlannerForm() {
             <h1 className="mt-5 max-w-3xl text-5xl leading-[0.95] text-white md:text-6xl [font-family:var(--font-heading)]">
               Shape a Pakistan itinerary that feels tailored, practical, and worth the journey.
             </h1>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-slate-300">
+            <p className="mt-6 max-w-2xl text-base leading-8 text-slate-200">
               Choose how long you want to travel, how much you want to spend, and what kind of
               experience you want most. PakVoyage will turn that into a route you can actually use.
             </p>
 
             <div className="mt-10 grid gap-4 md:grid-cols-2">
-              <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+              <div className="rounded-[28px] border border-white/12 bg-black/20 p-6">
                 <p className="text-[11px] uppercase tracking-[0.22em] text-slate-300">
                   Trip rhythm
                 </p>
                 <p className="mt-3 text-3xl text-white [font-family:var(--font-heading)]">
                   {days} days
                 </p>
-                <p className="mt-3 text-sm leading-7 text-slate-300">{destinationHint}</p>
+                <p className="mt-3 text-sm leading-7 text-slate-200">{destinationHint}</p>
               </div>
-              <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+              <div className="rounded-[28px] border border-white/12 bg-black/20 p-6">
                 <p className="text-[11px] uppercase tracking-[0.22em] text-slate-300">
                   Budget view
                 </p>
                 <p className="mt-3 text-3xl text-white [font-family:var(--font-heading)]">
                   PKR {Number(budget).toLocaleString()}
                 </p>
-                <p className="mt-3 text-sm leading-7 text-slate-300">{budgetTone}</p>
+                <p className="mt-3 text-sm leading-7 text-slate-200">{budgetTone}</p>
               </div>
             </div>
           </div>
@@ -147,7 +147,7 @@ export function PlannerForm() {
               <div>
                 <p className="eyebrow">Trip frame</p>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <label className="rounded-[24px] border border-slate-200 bg-white/80 p-5">
+                  <label className="rounded-[24px] border border-slate-200 bg-white/96 p-5">
                     <span className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
                       Days
                     </span>
@@ -162,7 +162,7 @@ export function PlannerForm() {
                     />
                   </label>
 
-                  <label className="rounded-[24px] border border-slate-200 bg-white/80 p-5">
+                  <label className="rounded-[24px] border border-slate-200 bg-white/96 p-5">
                     <span className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
                       Budget
                     </span>
@@ -192,13 +192,13 @@ export function PlannerForm() {
                         className={`w-full rounded-[24px] border p-5 text-left transition duration-300 ${
                           active
                             ? 'border-[rgba(34,101,74,0.18)] bg-[rgba(34,101,74,0.08)] shadow-[var(--shadow-soft)]'
-                            : 'border-slate-200 bg-white/74 hover:border-[rgba(34,101,74,0.18)] hover:bg-white'
+                            : 'border-slate-200 bg-white/90 hover:border-[rgba(34,101,74,0.18)] hover:bg-white'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div>
                             <p className="text-lg font-semibold text-slate-950">{option.label}</p>
-                            <p className="mt-2 text-sm leading-7 text-slate-600">
+                            <p className="mt-2 text-sm leading-7 text-slate-700">
                               {option.description}
                             </p>
                           </div>

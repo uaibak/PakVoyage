@@ -105,14 +105,14 @@ export function ResultsView() {
 
   return (
     <div className="space-y-8 md:space-y-10">
-      <section className="premium-card-dark soft-grid overflow-hidden px-7 py-8 md:px-10 md:py-10">
+      <section className="premium-card-dark overflow-hidden px-7 py-8 md:px-10 md:py-10">
         <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-emerald-200">Generated route</p>
             <h1 className="mt-5 max-w-4xl text-4xl leading-[0.98] text-white md:text-6xl [font-family:var(--font-heading)]">
               {itinerary.trip_summary}
             </h1>
-            <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 md:text-base">
+            <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-200 md:text-base">
               A curated plan shaped around your timeline, budget, and interests across Pakistan.
               Everything below is arranged to help you review the trip quickly and save it with
               confidence.
@@ -147,7 +147,7 @@ export function ResultsView() {
             {itinerary.itinerary_days.map((day) => (
               <article
                 key={`${day.day_number}-${day.destination.id}`}
-                className="relative overflow-hidden rounded-[28px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(246,241,232,0.88))] p-5 shadow-[var(--shadow-soft)] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-medium)] md:p-6"
+                className="relative overflow-hidden rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-[var(--shadow-soft)] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-medium)] md:p-6"
               >
                 <div className="absolute inset-y-6 left-6 hidden w-px bg-[linear-gradient(180deg,rgba(34,101,74,0.24),rgba(34,101,74,0))] md:block" />
 
@@ -172,7 +172,7 @@ export function ResultsView() {
                     </div>
                   </div>
 
-                  <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-700 md:text-[15px]">
+                  <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-800 md:text-[15px]">
                     {day.activities}
                   </p>
 

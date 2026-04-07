@@ -29,7 +29,7 @@ export function SectionHeading({
       {description ? (
         <p
           className={`mt-5 text-base leading-7 ${
-            isDark ? 'text-slate-300' : 'text-slate-600'
+            isDark ? 'text-slate-200' : 'text-slate-700'
           }`}
         >
           {description}

@@ -19,26 +19,24 @@ export function DestinationCard({
               {destination.name}
             </h3>
           </div>
-          <span className="rounded-full border border-[rgba(21,55,42,0.1)] bg-white/75 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--emerald)]">
+          <span className="rounded-full border border-[rgba(21,55,42,0.12)] bg-white/90 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--emerald)]">
             Curated
           </span>
         </div>
 
-        <p className="mt-5 text-sm leading-7 text-slate-600">
-          {destination.description}
-        </p>
+        <p className="mt-5 text-sm leading-7 text-slate-700">{destination.description}</p>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-[22px] border border-slate-200/80 bg-white/70 p-4">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
+          <div className="rounded-[22px] border border-slate-200/80 bg-white/92 p-4">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-slate-600">
               Best window
             </p>
             <p className="mt-2 text-sm font-semibold text-slate-900">
               {destination.best_time}
             </p>
           </div>
-          <div className="rounded-[22px] border border-slate-200/80 bg-white/70 p-4">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
+          <div className="rounded-[22px] border border-slate-200/80 bg-white/92 p-4">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-slate-600">
               Estimated from
             </p>
             <p className="mt-2 text-sm font-semibold text-slate-900">
@@ -47,8 +45,8 @@ export function DestinationCard({
           </div>
         </div>
 
-        <div className="mt-8 flex items-center justify-between">
-          <span className="text-sm text-slate-500">
+        <div className="mt-8 flex items-center justify-between gap-4">
+          <span className="text-sm leading-6 text-slate-600">
             Scenic planning notes and route-ready details
           </span>
           <Link
@@ -56,7 +54,7 @@ export function DestinationCard({
             className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--pine)] transition group-hover:text-[var(--emerald)]"
           >
             Explore
-            <span aria-hidden="true">→</span>
+            <span aria-hidden="true">-&gt;</span>
           </Link>
         </div>
       </div>

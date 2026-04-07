@@ -39,7 +39,7 @@ export default async function DestinationPage({
 
   return (
     <div className="shell py-16">
-      <section className="premium-card-dark soft-grid overflow-hidden px-7 py-8 md:px-10 md:py-12">
+      <section className="premium-card-dark overflow-hidden px-7 py-8 md:px-10 md:py-12">
         <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-emerald-200">
@@ -48,7 +48,7 @@ export default async function DestinationPage({
             <h1 className="mt-5 max-w-4xl text-5xl leading-[0.95] text-white md:text-7xl [font-family:var(--font-heading)]">
               {destination.name}
             </h1>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-slate-300">
+            <p className="mt-6 max-w-2xl text-base leading-8 text-slate-200">
               {destination.description}
             </p>
           </div>
@@ -77,7 +77,7 @@ export default async function DestinationPage({
             shorter trip or combine it with nearby regions for a broader route.
           </p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-[24px] border border-slate-200 bg-[rgba(255,255,255,0.7)] p-5">
+            <div className="rounded-[24px] border border-slate-200 bg-[rgba(255,255,255,0.92)] p-5">
               <p className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
                 Best timing
               </p>
@@ -85,7 +85,7 @@ export default async function DestinationPage({
                 {destination.best_time}
               </p>
             </div>
-            <div className="rounded-[24px] border border-slate-200 bg-[rgba(255,255,255,0.7)] p-5">
+            <div className="rounded-[24px] border border-slate-200 bg-[rgba(255,255,255,0.92)] p-5">
               <p className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
                 Daily spend
               </p>
@@ -106,7 +106,7 @@ export default async function DestinationPage({
             PakVoyage map the pacing for you.
           </p>
 
-          <div className="mt-8 rounded-[28px] bg-[linear-gradient(135deg,rgba(34,101,74,0.08),rgba(198,154,83,0.12))] p-6">
+          <div className="mt-8 rounded-[28px] border border-slate-200 bg-[rgba(248,243,235,1)] p-6">
             <p className="text-[11px] uppercase tracking-[0.22em] text-slate-600">
               Recommended use
             </p>
