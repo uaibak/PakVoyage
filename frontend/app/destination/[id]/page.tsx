@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { apiBaseUrl } from '@/lib/api';
 import { Destination } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 interface DestinationPageProps {
   params: {
     id: string;
