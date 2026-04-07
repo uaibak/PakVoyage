@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String      @id @default(cuid())
+  email       String      @unique
+  name        String?
+  created_at  DateTime    @default(now())
+  itineraries Itinerary[]
+
+  @@map("users")
+}
+
+model Destination {
+  id                String         @id @default(cuid())
+  name              String         @unique
+  region            String
+  description       String
+  best_time         String
+  avg_cost_per_day  Int
+  itinerary_days    ItineraryDay[]
+
+  @@map("destinations")
+}
+
+model Itinerary {
+  id             String         @id @default(cuid())
+  user_id        String?
+  days           Int
+  budget         Int
+  interests      String[]
+  total_cost     Int
+  hotel_cost     Int
+  transport_cost Int
+  food_cost      Int
+  created_at     DateTime       @default(now())
+  user           User?          @relation(fields: [user_id], references: [id])
+  itinerary_days ItineraryDay[]
+
+  @@map("itineraries")
+}
+
+model ItineraryDay {
+  id             String      @id @default(cuid())
+  itinerary_id   String
+  day_number     Int
+  destination_id String
+  activities     String
+  cost           Int
+  itinerary      Itinerary   @relation(fields: [itinerary_id], references: [id])
+  destination    Destination @relation(fields: [destination_id], references: [id])
+
+  @@map("itinerary_days")
+}
