@@ -5,11 +5,11 @@ const navItems = [
   { href: '/planner', label: 'Planner' },
 ];
 
-export function SiteHeader(): JSX.Element {
+export function SiteHeader() {
   return (
     <header className="border-b border-white/10 bg-slate-950/80 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="text-lg font-semibold tracking-[0.18em] text-white uppercase">
+        <Link href="/" className="text-lg font-semibold uppercase tracking-[0.18em] text-white">
           PakVoyage
         </Link>
         <nav className="flex items-center gap-5 text-sm text-slate-200">

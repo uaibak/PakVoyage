@@ -27,7 +27,7 @@ async function getDestination(id: string): Promise<Destination | null> {
 
 export default async function DestinationPage({
   params,
-}: DestinationPageProps): Promise<JSX.Element> {
+}: DestinationPageProps) {
   const destination = await getDestination(params.id);
 
   if (!destination) {

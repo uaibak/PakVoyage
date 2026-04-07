@@ -19,7 +19,7 @@ async function getDestinations(): Promise<Destination[]> {
   }
 }
 
-export default async function HomePage(): Promise<JSX.Element> {
+export default async function HomePage() {
   const destinations = await getDestinations();
   const featuredDestinations = destinations.slice(0, 4);
 

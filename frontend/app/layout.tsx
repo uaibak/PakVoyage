@@ -1,17 +1,19 @@
 import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
 import { SiteHeader } from '@/components/site-header';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: 'PakVoyage',
-  description: 'All-in-one Pakistan travel planner for destinations, itineraries, and trip budgeting.',
+  description:
+    'All-in-one Pakistan travel planner for destinations, itineraries, and trip budgeting.',
 };
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
-}): JSX.Element {
+  children: ReactNode;
+}) {
   return (
     <html lang="en">
       <body className="min-h-screen bg-stone-50 text-slate-950 antialiased">
