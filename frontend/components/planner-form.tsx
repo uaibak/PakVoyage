@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiBaseUrl } from '@/lib/api';
+import { parseApiError } from '@/lib/api-error';
 import { GeneratedItinerary, TravelInterest } from '@/lib/types';
 
 const interestOptions: { label: string; value: TravelInterest; description: string }[] = [
@@ -67,7 +68,7 @@ export function PlannerForm() {
       });
 
       if (!response.ok) {
-        throw new Error('Unable to generate itinerary');
+        throw await parseApiError(response);
       }
 
       const data = (await response.json()) as GeneratedItinerary;

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { apiBaseUrl } from '@/lib/api';
+import { parseApiError } from '@/lib/api-error';
 import { GeneratedItinerary, SavedItinerary, TripRequest } from '@/lib/types';
 
 export function ResultsView() {
@@ -62,7 +63,7 @@ export function ResultsView() {
       });
 
       if (!response.ok) {
-        throw new Error('Unable to save itinerary');
+        throw await parseApiError(response);
       }
 
       const saved = (await response.json()) as SavedItinerary;
