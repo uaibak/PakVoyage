@@ -4,6 +4,8 @@
 
 :root {
   color-scheme: light;
+  --font-heading: "Georgia", "Times New Roman", serif;
+  --font-body: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --background: #f5efe5;
   --background-strong: #ece3d2;
   --surface: rgba(255, 250, 242, 0.96);

@@ -1,70 +1,231 @@
 # PakVoyage
 
-An all-in-one travel planner for Pakistan.
+PakVoyage is a full-stack MVP travel planner for Pakistan. It helps users explore destinations, generate itineraries based on trip length, budget, and interests, estimate trip costs, and save itineraries for later use.
 
-## Tech Stack
+## Stack
 
-- **Frontend**: Next.js 14, TypeScript, Tailwind CSS
-- **Backend**: NestJS, TypeScript
-- **Database**: PostgreSQL with Prisma ORM
+- Frontend: Next.js 14, TypeScript, Tailwind CSS
+- Backend: NestJS, TypeScript
+- Database: PostgreSQL
+- ORM: Prisma
 
-## Setup
+## Project Structure
 
-### Backend
-
-1. Navigate to backend directory:
-   ```bash
-   cd backend
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Set up environment variables:
-   - Copy `.env.example` to `.env`
-   - Update DATABASE_URL with your PostgreSQL connection string
-
-4. Set up database:
-   ```bash
-   npx prisma migrate dev
-   npx prisma db seed
-   ```
-
-5. Start the backend:
-   ```bash
-   npm run start:dev
-   ```
-
-### Frontend
-
-1. Navigate to frontend directory:
-   ```bash
-   cd frontend
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Start the frontend:
-   ```bash
-   npm run dev
-   ```
-
-## API Endpoints
-
-- `GET /destinations` - List all destinations
-- `GET /destinations/:id` - Get destination by ID
-- `POST /itinerary/generate` - Generate itinerary
-- `POST /itinerary/save` - Save itinerary
-- `GET /itinerary/:id` - Get saved itinerary
+```text
+PakVoyage/
+├─ backend/   # NestJS API + Prisma
+├─ frontend/  # Next.js App Router UI
+├─ README.md
+└─ .gitignore
+```
 
 ## Features
 
-- Explore destinations in Pakistan
-- Generate personalized itineraries based on days, budget, and interests
-- Estimate trip costs
-- Save itineraries for later reference
+- Destination listing and destination detail pages
+- Itinerary generation using:
+  - trip days
+  - budget
+  - interests: `mountains`, `culture`, `food`
+- Cost breakdown with hotel, transport, and food estimates
+- Save itinerary to PostgreSQL
+- Route-level loading states
+- Backend validation and structured exception handling
+- Backend file logging to a dedicated `backend/logs` directory
+
+## Current Routes
+
+Frontend:
+
+- `/` - homepage
+- `/planner` - itinerary planner form
+- `/results` - generated itinerary view
+- `/destination/[id]` - destination detail page
+
+Backend API base:
+
+- `http://localhost:3001/api`
+
+API endpoints:
+
+- `GET /api/destinations`
+- `GET /api/destinations/:id`
+- `POST /api/itinerary/generate`
+- `POST /api/itinerary/save`
+- `GET /api/itinerary/:id`
+
+## Database Models
+
+Defined in [backend/prisma/schema.prisma](d:/Work/PakVoyage/backend/prisma/schema.prisma):
+
+- `User`
+- `Destination`
+- `Itinerary`
+- `ItineraryDay`
+
+Saved itineraries are stored in:
+
+- `itineraries`
+- `itinerary_days`
+
+## Environment Variables
+
+Backend uses [backend/.env.example](d:/Work/PakVoyage/backend/.env.example):
+
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/pakvoyage_db?schema=public"
+PORT=3001
+```
+
+Notes:
+
+- Update `DATABASE_URL` to match your PostgreSQL credentials.
+- If your password contains characters like `@`, `#`, or `:`, URL-encode them inside `DATABASE_URL`.
+- The backend runs on port `3001` by default.
+
+## Getting Started
+
+### 1. Install dependencies
+
+Backend:
+
+```powershell
+cd backend
+npm install
+```
+
+Frontend:
+
+```powershell
+cd frontend
+npm install
+```
+
+### 2. Configure the backend environment
+
+From [backend](d:/Work/PakVoyage/backend):
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Then edit `.env` and set a valid PostgreSQL connection string.
+
+### 3. Generate Prisma Client
+
+From [backend](d:/Work/PakVoyage/backend):
+
+```powershell
+npm run prisma:generate
+```
+
+### 4. Create the database schema
+
+From [backend](d:/Work/PakVoyage/backend):
+
+```powershell
+npx prisma db push
+```
+
+This project currently uses `db push` for the MVP schema flow.
+
+### 5. Seed sample destinations
+
+From [backend](d:/Work/PakVoyage/backend):
+
+```powershell
+npm run db:seed
+```
+
+The seed inserts sample destinations such as Hunza, Skardu, Lahore, Islamabad, Swat Valley, and Karachi.
+
+## Running the Project
+
+### Start the backend
+
+From [backend](d:/Work/PakVoyage/backend):
+
+```powershell
+npm start
+```
+
+Useful backend scripts:
+
+- `npm start` - run the backend
+- `npm run start:dev` - watch mode
+- `npm run build` - compile TypeScript
+- `npm run start:prod` - run compiled build
+- `npm run lint` - type-check the backend
+
+### Start the frontend
+
+From [frontend](d:/Work/PakVoyage/frontend):
+
+```powershell
+npm run dev
+```
+
+Useful frontend scripts:
+
+- `npm run dev` - start Next.js dev server
+- `npm run build` - production build
+- `npm start` - run built frontend
+- `npm run lint` - lint frontend
+
+## Default Local URLs
+
+- Frontend: `http://localhost:3000`
+- Backend API: `http://localhost:3001/api`
+
+## How Itinerary Saving Works
+
+When a user generates a plan on the frontend and clicks save:
+
+1. The frontend sends a request to `POST /api/itinerary/save`
+2. The backend creates an `itineraries` record
+3. Related `itinerary_days` rows are created for each day in the trip
+4. The saved itinerary can later be fetched with `GET /api/itinerary/:id`
+
+Implementation references:
+
+- [backend/src/itinerary/itinerary.controller.ts](d:/Work/PakVoyage/backend/src/itinerary/itinerary.controller.ts)
+- [backend/src/itinerary/itinerary.service.ts](d:/Work/PakVoyage/backend/src/itinerary/itinerary.service.ts)
+
+## Logging
+
+Backend logs are written to:
+
+- [backend/logs](d:/Work/PakVoyage/backend/logs)
+
+This includes daily application and error log files generated by the custom backend logger.
+
+## Error Handling
+
+The backend includes:
+
+- DTO validation with Nest validation pipes
+- structured exception responses
+- Prisma-aware exception handling
+- centralized logging for runtime errors
+
+The frontend includes:
+
+- route-level loading states
+- user-facing API error parsing for itinerary actions
+
+## Verification
+
+The frontend and backend have both been built successfully during implementation:
+
+- frontend: `npm.cmd run build`
+- backend: `npm.cmd run build`
+
+## Known Notes
+
+- This is an MVP, so authentication is not fully implemented yet.
+- `user_id` on itineraries is optional.
+- Saved itineraries exist in the database even without a linked user.
+- If Next.js shows stale chunk or `_document` module errors, delete [frontend/.next](d:/Work/PakVoyage/frontend/.next) and restart the frontend dev server.
+
+## License
+
+See [LICENSE](d:/Work/PakVoyage/LICENSE).
