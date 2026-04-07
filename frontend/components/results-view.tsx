@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { apiBaseUrl } from '@/lib/api';
 import { parseApiError } from '@/lib/api-error';
+import { SectionHeading } from '@/components/section-heading';
+import { StatPill } from '@/components/stat-pill';
 import { GeneratedItinerary, SavedItinerary, TripRequest } from '@/lib/types';
 
 export function ResultsView() {
@@ -85,16 +87,16 @@ export function ResultsView() {
 
   if (!itinerary || !tripRequest) {
     return (
-      <div className="rounded-[2rem] border border-slate-200 bg-white p-10 text-center shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
-        <h1 className="text-3xl font-semibold text-slate-950">No itinerary found</h1>
-        <p className="mt-4 text-sm leading-6 text-slate-600">
-          Start in the planner to generate a trip, then come back here for the full
-          day-by-day breakdown.
+      <div className="premium-card mx-auto max-w-3xl p-10 text-center md:p-14">
+        <p className="eyebrow">No itinerary yet</p>
+        <h1 className="mt-5 text-4xl text-slate-950 [font-family:var(--font-heading)] md:text-5xl">
+          Build your route first, then return here for the full journey view.
+        </h1>
+        <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-slate-600">
+          Your generated plan, day-by-day sequence, and cost breakdown will appear here once
+          PakVoyage creates an itinerary for you.
         </p>
-        <Link
-          href="/planner"
-          className="mt-6 inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
-        >
+        <Link href="/planner" className="cta-primary mt-8 inline-flex">
           Open planner
         </Link>
       </div>
@@ -102,50 +104,102 @@ export function ResultsView() {
   }
 
   return (
-    <div className="space-y-8">
-      <section className="rounded-[2rem] bg-slate-950 p-8 text-white shadow-[0_32px_80px_rgba(15,23,42,0.24)]">
-        <p className="text-sm uppercase tracking-[0.24em] text-emerald-300">Trip summary</p>
-        <h1 className="mt-3 text-4xl font-semibold">{itinerary.trip_summary}</h1>
-        <p className="mt-4 text-sm leading-6 text-slate-300">
-          {tripRequest.days} days • PKR {tripRequest.budget.toLocaleString()} budget •{' '}
-          {tripRequest.interests.join(', ')}
-        </p>
+    <div className="space-y-8 md:space-y-10">
+      <section className="premium-card-dark soft-grid overflow-hidden px-7 py-8 md:px-10 md:py-10">
+        <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-emerald-200">Generated route</p>
+            <h1 className="mt-5 max-w-4xl text-4xl leading-[0.98] text-white md:text-6xl [font-family:var(--font-heading)]">
+              {itinerary.trip_summary}
+            </h1>
+            <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 md:text-base">
+              A curated plan shaped around your timeline, budget, and interests across Pakistan.
+              Everything below is arranged to help you review the trip quickly and save it with
+              confidence.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <StatPill label="Trip length" value={`${tripRequest.days} days`} tone="dark" />
+            <StatPill
+              label="Target budget"
+              value={`PKR ${tripRequest.budget.toLocaleString()}`}
+              tone="dark"
+            />
+            <StatPill
+              label="Travel mood"
+              value={tripRequest.interests.join(', ')}
+              tone="dark"
+            />
+          </div>
+        </div>
       </section>
 
-      <section className="grid gap-8 lg:grid-cols-[1.3fr_0.7fr]">
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
-          <h2 className="text-2xl font-semibold text-slate-950">Day-by-day plan</h2>
-          <div className="mt-6 space-y-4">
+      <section className="grid gap-8 xl:grid-cols-[1.18fr_0.82fr]">
+        <div className="premium-card p-6 md:p-8">
+          <SectionHeading
+            eyebrow="Itinerary"
+            title="Day-by-day route"
+            description="Each stop is ordered to keep the journey practical while still feeling memorable."
+          />
+
+          <div className="mt-8 space-y-5">
             {itinerary.itinerary_days.map((day) => (
               <article
                 key={`${day.day_number}-${day.destination.id}`}
-                className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5"
+                className="relative overflow-hidden rounded-[28px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(246,241,232,0.88))] p-5 shadow-[var(--shadow-soft)] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-medium)] md:p-6"
               >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h3 className="text-lg font-semibold text-slate-950">
-                    Day {day.day_number}: {day.destination.name}
-                  </h3>
-                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-medium text-emerald-800">
-                    PKR {day.cost.toLocaleString()}
-                  </span>
+                <div className="absolute inset-y-6 left-6 hidden w-px bg-[linear-gradient(180deg,rgba(34,101,74,0.24),rgba(34,101,74,0))] md:block" />
+
+                <div className="relative md:pl-8">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[rgba(34,101,74,0.1)] text-sm font-semibold text-[var(--pine)]">
+                        {String(day.day_number).padStart(2, '0')}
+                      </div>
+                      <div>
+                        <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">
+                          {day.destination.region}
+                        </p>
+                        <h3 className="mt-2 text-2xl text-slate-950 [font-family:var(--font-heading)]">
+                          {day.destination.name}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div className="rounded-full border border-[rgba(34,101,74,0.14)] bg-[rgba(34,101,74,0.08)] px-4 py-2 text-sm font-semibold text-[var(--pine)]">
+                      PKR {day.cost.toLocaleString()}
+                    </div>
+                  </div>
+
+                  <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-700 md:text-[15px]">
+                    {day.activities}
+                  </p>
+
+                  <div className="mt-6 flex flex-wrap items-center gap-3">
+                    <div className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-xs uppercase tracking-[0.18em] text-slate-600">
+                      Best time: {day.destination.best_time}
+                    </div>
+                    <Link
+                      href={`/destination/${day.destination.id}`}
+                      className="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:border-[rgba(34,101,74,0.2)] hover:text-[var(--pine)]"
+                    >
+                      Explore destination
+                    </Link>
+                  </div>
                 </div>
-                <p className="mt-2 text-sm text-slate-500">{day.destination.region}</p>
-                <p className="mt-4 text-sm leading-6 text-slate-700">{day.activities}</p>
-                <Link
-                  href={`/destination/${day.destination.id}`}
-                  className="mt-4 inline-flex text-sm font-medium text-emerald-700 transition hover:text-emerald-900"
-                >
-                  Explore destination
-                </Link>
               </article>
             ))}
           </div>
         </div>
 
-        <aside className="space-y-6">
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
-            <h2 className="text-xl font-semibold text-slate-950">Cost breakdown</h2>
-            <div className="mt-5 space-y-3 text-sm text-slate-700">
+        <aside className="space-y-6 xl:sticky xl:top-28 xl:self-start">
+          <div className="premium-card p-6 md:p-7">
+            <p className="eyebrow">Budget outlook</p>
+            <h2 className="mt-4 text-3xl text-slate-950 [font-family:var(--font-heading)]">
+              Cost breakdown
+            </h2>
+            <div className="mt-6 space-y-3 text-sm text-slate-700">
               <div className="flex items-center justify-between">
                 <span>Hotel</span>
                 <span>PKR {itinerary.cost_breakdown.hotel.toLocaleString()}</span>
@@ -164,10 +218,10 @@ export function ResultsView() {
               </div>
             </div>
             <p
-              className={`mt-5 rounded-2xl px-4 py-3 text-sm ${
+              className={`mt-6 rounded-[24px] px-4 py-4 text-sm leading-6 ${
                 itinerary.cost_breakdown.is_within_budget
-                  ? 'bg-emerald-50 text-emerald-800'
-                  : 'bg-amber-50 text-amber-800'
+                  ? 'border border-emerald-200 bg-emerald-50 text-emerald-800'
+                  : 'border border-amber-200 bg-amber-50 text-amber-800'
               }`}
             >
               {itinerary.cost_breakdown.is_within_budget
@@ -176,36 +230,52 @@ export function ResultsView() {
             </p>
           </div>
 
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
-            <h2 className="text-xl font-semibold text-slate-950">Actions</h2>
+          <div className="premium-card p-6 md:p-7">
+            <p className="eyebrow">Next move</p>
+            <h2 className="mt-4 text-3xl text-slate-950 [font-family:var(--font-heading)]">
+              Save or refine
+            </h2>
             <div className="mt-5 flex flex-col gap-3">
               <button
                 type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="inline-flex items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="cta-primary w-full justify-center disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {saving ? 'Saving itinerary...' : 'Save itinerary'}
               </button>
-              <Link
-                href="/planner"
-                className="inline-flex items-center justify-center rounded-full border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-900 transition hover:border-slate-900"
-              >
+              <Link href="/planner" className="cta-secondary w-full justify-center">
                 Plan another trip
               </Link>
             </div>
 
             {savedItinerary ? (
-              <p className="mt-5 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+              <p className="mt-5 rounded-[24px] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-6 text-emerald-800">
                 Itinerary saved successfully. ID: {savedItinerary.id}
               </p>
             ) : null}
 
             {error ? (
-              <p className="mt-5 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              <p className="mt-5 rounded-[24px] border border-rose-200 bg-rose-50 px-4 py-4 text-sm leading-6 text-rose-700">
                 {error}
               </p>
             ) : null}
+
+            <div className="mt-6 rounded-[24px] bg-[rgba(15,23,42,0.04)] px-5 py-5">
+              <p className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
+                Destinations included
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {itinerary.destinations.map((destination) => (
+                  <span
+                    key={destination.id}
+                    className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                  >
+                    {destination.name}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         </aside>
       </section>

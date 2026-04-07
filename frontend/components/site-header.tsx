@@ -3,26 +3,42 @@ import Link from 'next/link';
 const navItems = [
   { href: '/', label: 'Home' },
   { href: '/planner', label: 'Planner' },
+  { href: '/results', label: 'Results' },
 ];
 
 export function SiteHeader() {
   return (
-    <header className="border-b border-white/10 bg-slate-950/80 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="text-lg font-semibold uppercase tracking-[0.18em] text-white">
-          PakVoyage
+    <header className="sticky top-0 z-50 border-b border-black/5 bg-[rgba(247,241,232,0.72)] backdrop-blur-xl">
+      <div className="shell flex items-center justify-between py-4">
+        <Link href="/" className="group flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(21,55,42,0.12)] bg-[rgba(255,252,247,0.86)] text-sm font-bold text-[var(--pine)] shadow-[var(--shadow-soft)]">
+            PV
+          </div>
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--emerald)]">
+              Pakistan Travel Planner
+            </p>
+            <p className="text-2xl leading-none text-[var(--pine)] [font-family:var(--font-heading)]">
+              PakVoyage
+            </p>
+          </div>
         </Link>
-        <nav className="flex items-center gap-5 text-sm text-slate-200">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="transition hover:text-emerald-300"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <div className="flex items-center gap-4">
+          <nav className="hidden items-center gap-6 rounded-full border border-[rgba(21,55,42,0.1)] bg-[rgba(255,252,247,0.68)] px-5 py-3 text-sm text-slate-700 shadow-[var(--shadow-soft)] md:flex">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="transition hover:text-[var(--emerald)]"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+          <Link href="/planner" className="cta-primary">
+            Start planning
+          </Link>
+        </div>
       </div>
     </header>
   );

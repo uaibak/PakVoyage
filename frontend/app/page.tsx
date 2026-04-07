@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { DestinationCard } from '@/components/destination-card';
+import { SectionHeading } from '@/components/section-heading';
+import { StatPill } from '@/components/stat-pill';
 import { apiBaseUrl } from '@/lib/api';
 import { Destination } from '@/lib/types';
 
@@ -24,48 +26,86 @@ export default async function HomePage() {
   const featuredDestinations = destinations.slice(0, 4);
 
   return (
-    <div className="space-y-24 pb-20">
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.25),_transparent_38%),radial-gradient(circle_at_bottom_right,_rgba(251,191,36,0.18),_transparent_32%),linear-gradient(135deg,#020617,#0f172a_52%,#1e293b)]" />
-        <div className="relative mx-auto grid max-w-6xl gap-10 px-6 py-24 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
-          <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-emerald-300">
-              Pakistan travel planner
-            </p>
-            <h1 className="mt-6 max-w-3xl text-5xl font-semibold leading-tight text-white sm:text-6xl">
-              Plan mountain escapes, cultural city breaks, and food-focused trips in one place.
-            </h1>
-            <p className="mt-6 max-w-2xl text-base leading-7 text-slate-300">
-              PakVoyage creates usable itineraries for Pakistan based on your days,
-              budget, and interests, then gives you a simple cost estimate and route
-              logic you can act on.
-            </p>
-            <div className="mt-10 flex flex-wrap gap-4">
-              <Link
-                href="/planner"
-                className="inline-flex rounded-full bg-emerald-300 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-200"
-              >
-                Start planning
-              </Link>
-              <a
-                href="#destinations"
-                className="inline-flex rounded-full border border-white/20 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/40"
-              >
-                Explore destinations
-              </a>
+    <div className="pb-24">
+      <section className="section-space shell">
+        <div className="premium-card-dark soft-grid relative overflow-hidden px-8 py-12 md:px-12 md:py-16">
+          <div className="absolute -right-24 top-10 h-64 w-64 rounded-full bg-[rgba(95,159,162,0.18)] blur-3xl" />
+          <div className="absolute bottom-0 left-0 h-48 w-72 rounded-full bg-[rgba(191,142,52,0.14)] blur-3xl" />
+
+          <div className="relative grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
+            <div>
+              <p className="text-xs uppercase tracking-[0.32em] text-emerald-200">
+                Premium Pakistan trip planning
+              </p>
+              <h1 className="mt-6 max-w-4xl text-5xl leading-[0.95] text-white md:text-7xl [font-family:var(--font-heading)]">
+                Plan Pakistan with the clarity of a route map and the feeling of a travel journal.
+              </h1>
+              <p className="mt-6 max-w-2xl text-base leading-8 text-slate-300">
+                PakVoyage helps you discover destinations, generate practical itineraries,
+                estimate costs, and shape a more confident trip across Pakistan.
+              </p>
+
+              <div className="mt-10 flex flex-wrap gap-4">
+                <Link href="/planner" className="cta-primary">
+                  Start your itinerary
+                </Link>
+                <a href="#destinations" className="cta-secondary border-white/15 bg-white/5 text-white hover:bg-white/10">
+                  Explore destinations
+                </a>
+              </div>
+
+              <div className="mt-10 flex flex-wrap gap-3">
+                <StatPill label="Planner" value="Days, budget, interests" tone="dark" />
+                <StatPill label="Routes" value="North + city combinations" tone="dark" />
+                <StatPill label="Costing" value="Hotel, food, transport" tone="dark" />
+              </div>
+            </div>
+
+            <div className="grid gap-4">
+              {[
+                {
+                  title: 'Mountain-first routes',
+                  body: 'From Hunza to Skardu, shape scenic trips with sensible day splits.',
+                },
+                {
+                  title: 'Budget-aware planning',
+                  body: 'See if the route fits your budget before you commit to it.',
+                },
+                {
+                  title: 'Premium but practical',
+                  body: 'Designed for local and international travelers who want elegance with utility.',
+                },
+              ].map((item) => (
+                <div
+                  key={item.title}
+                  className="rounded-[26px] border border-white/10 bg-white/5 p-6 backdrop-blur"
+                >
+                  <h2 className="text-2xl text-white [font-family:var(--font-heading)]">
+                    {item.title}
+                  </h2>
+                  <p className="mt-3 text-sm leading-7 text-slate-300">{item.body}</p>
+                </div>
+              ))}
             </div>
           </div>
+        </div>
+      </section>
 
-          <div className="grid gap-4 rounded-[2rem] border border-white/10 bg-white/10 p-6 backdrop-blur">
+      <section className="shell section-space pt-0">
+        <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+          <SectionHeading
+            eyebrow="Why PakVoyage"
+            title="A calmer, more elegant way to plan travel across Pakistan."
+            description="The experience combines inspiration and clarity so your route feels exciting, realistic, and easy to act on."
+          />
+          <div className="grid gap-4 sm:grid-cols-2">
             {[
-              '3-5 days: one destination with room to slow down',
-              '6-10 days: combine city energy with northern scenery',
-              'Budget-aware estimates for hotel, transport, and food',
+              'Destination-led planning informed by travel style',
+              'Premium itinerary presentation, not cluttered output',
+              'Practical cost visibility for real-world decision making',
+              'Mobile-friendly flow designed for quick planning',
             ].map((item) => (
-              <div
-                key={item}
-                className="rounded-[1.5rem] border border-white/10 bg-slate-950/40 p-5 text-sm leading-6 text-slate-200"
-              >
+              <div key={item} className="premium-card px-5 py-6 text-sm leading-7 text-slate-700">
                 {item}
               </div>
             ))}
@@ -73,37 +113,14 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6">
-        <div className="grid gap-6 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)] lg:grid-cols-3">
-          <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-emerald-700">How it works</p>
-            <h2 className="mt-3 text-3xl font-semibold text-slate-950">
-              Simple inputs, practical trip output
-            </h2>
-          </div>
-          <div className="text-sm leading-6 text-slate-600">
-            Enter your available days, budget, and interests, and PakVoyage maps them
-            into destinations that make sense together.
-          </div>
-          <div className="text-sm leading-6 text-slate-600">
-            You get a day-by-day flow, estimated cost breakdown, and the option to save
-            the itinerary for later retrieval.
-          </div>
-        </div>
-      </section>
-
-      <section id="destinations" className="mx-auto max-w-6xl px-6">
+      <section id="destinations" className="shell section-space pt-0">
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-emerald-700">Destinations</p>
-            <h2 className="mt-3 text-3xl font-semibold text-slate-950">
-              Featured routes across Pakistan
-            </h2>
-          </div>
-          <Link
-            href="/planner"
-            className="inline-flex rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:border-slate-950"
-          >
+          <SectionHeading
+            eyebrow="Featured routes"
+            title="Places that shape unforgettable Pakistan itineraries"
+            description="Discover a curated set of destinations with timing, cost cues, and region context before building your route."
+          />
+          <Link href="/planner" className="cta-secondary">
             Build custom trip
           </Link>
         </div>
@@ -114,10 +131,49 @@ export default async function HomePage() {
               <DestinationCard key={destination.id} destination={destination} />
             ))
           ) : (
-            <div className="rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-10 text-sm leading-6 text-slate-600">
-              Destination data will appear here once the backend API is running and seeded.
+            <div className="premium-card p-10 text-sm leading-7 text-slate-600">
+              Destination data will appear here once the backend is running and seeded.
             </div>
           )}
+        </div>
+      </section>
+
+      <section className="shell section-space pt-0">
+        <div className="premium-card grid gap-8 p-8 md:p-10 lg:grid-cols-4">
+          <div className="lg:col-span-2">
+            <SectionHeading
+              eyebrow="How it works"
+              title="From idea to route in a few confident steps"
+              description="The flow is intentionally simple, with strong guidance around destination choice, trip duration, and affordability."
+            />
+          </div>
+          {[
+            {
+              step: '01',
+              title: 'Choose your trip frame',
+              text: 'Set days, budget, and interests to shape the right type of route.',
+            },
+            {
+              step: '02',
+              title: 'Generate the itinerary',
+              text: 'Get a route with destinations, day-by-day pacing, and trip summary.',
+            },
+            {
+              step: '03',
+              title: 'Review and save',
+              text: 'Compare cost breakdowns, explore destination pages, and save the plan.',
+            },
+          ].map((item) => (
+            <div key={item.step} className="rounded-[28px] border border-slate-200 bg-white/70 p-6">
+              <p className="text-xs uppercase tracking-[0.28em] text-[var(--emerald)]">
+                Step {item.step}
+              </p>
+              <h3 className="mt-4 text-2xl text-slate-950 [font-family:var(--font-heading)]">
+                {item.title}
+              </h3>
+              <p className="mt-4 text-sm leading-7 text-slate-600">{item.text}</p>
+            </div>
+          ))}
         </div>
       </section>
     </div>

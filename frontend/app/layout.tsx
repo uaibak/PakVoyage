@@ -1,7 +1,20 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { Cormorant_Garamond, Manrope } from 'next/font/google';
 import { SiteHeader } from '@/components/site-header';
 import './globals.css';
+
+const headingFont = Cormorant_Garamond({
+  subsets: ['latin'],
+  variable: '--font-heading',
+  weight: ['500', '600', '700'],
+});
+
+const bodyFont = Manrope({
+  subsets: ['latin'],
+  variable: '--font-body',
+  weight: ['400', '500', '600', '700'],
+});
 
 export const metadata: Metadata = {
   title: 'PakVoyage',
@@ -18,11 +31,11 @@ export default function RootLayout({
     <html lang="en">
       <body
         suppressHydrationWarning
-        className="min-h-screen bg-stone-50 text-slate-950 antialiased"
+        className={`${headingFont.variable} ${bodyFont.variable} min-h-screen text-slate-950 antialiased [font-family:var(--font-body)]`}
       >
-        <div className="min-h-screen bg-[linear-gradient(180deg,rgba(240,253,250,0.8),rgba(248,250,252,0.92)_24%,rgba(248,250,252,1)_100%)]">
+        <div className="relative min-h-screen overflow-x-hidden">
           <SiteHeader />
-          <main>{children}</main>
+          <main className="relative z-10">{children}</main>
         </div>
       </body>
     </html>
