@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { apiBaseUrl } from '@/lib/api';
 import { GeneratedItinerary, SavedItinerary, TripRequest } from '@/lib/types';
 
-export function ResultsView(): JSX.Element {
+export function ResultsView() {
   const [itinerary, setItinerary] = useState<GeneratedItinerary | null>(null);
   const [tripRequest, setTripRequest] = useState<TripRequest | null>(null);
   const [loading, setLoading] = useState<boolean>(true);

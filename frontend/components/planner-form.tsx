@@ -19,11 +19,11 @@ const interestOptions: { label: string; value: TravelInterest; description: stri
   {
     label: 'Food',
     value: 'food',
-    description: 'Street food, regional favorites, and café stops.',
+    description: 'Street food, regional favorites, and cafe stops.',
   },
 ];
 
-export function PlannerForm(): JSX.Element {
+export function PlannerForm() {
   const router = useRouter();
   const [days, setDays] = useState<string>('7');
   const [budget, setBudget] = useState<string>('70000');

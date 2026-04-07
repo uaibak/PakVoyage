@@ -24,7 +24,7 @@ async function main() {
       name: 'Lahore',
       region: 'Punjab',
       description:
-        'Pakistan’s cultural capital, packed with Mughal heritage, old-city streets, museums, and legendary food.',
+        "Pakistan's cultural capital, packed with Mughal heritage, old-city streets, museums, and legendary food.",
       best_time: 'October to March',
       avg_cost_per_day: 7000,
     },
@@ -32,7 +32,7 @@ async function main() {
       name: 'Islamabad',
       region: 'Capital Territory',
       description:
-        'A calm, well-planned capital with Margalla Hills access, museums, cafés, and convenient northbound connections.',
+        'A calm, well-planned capital with Margalla Hills access, museums, cafes, and convenient northbound connections.',
       best_time: 'Year-round',
       avg_cost_per_day: 7500,
     },
@@ -54,13 +54,13 @@ async function main() {
     },
   ];
 
-  for (const dest of destinations) {
+  for (const destination of destinations) {
     await prisma.destination.upsert({
       where: {
-        name: dest.name,
+        name: destination.name,
       },
-      update: dest,
-      create: dest,
+      update: destination,
+      create: destination,
     });
   }
 
@@ -68,8 +68,8 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
+  .catch((error) => {
+    console.error(error);
     process.exit(1);
   })
   .finally(async () => {

@@ -201,7 +201,7 @@ export class ItineraryService {
     const templates: Record<string, string[]> = {
       Hunza: [
         'Arrive in Hunza, settle in, and take an easy evening walk around Karimabad.',
-        'Visit Altit and Baltit Fort, then explore local cafés and viewpoints.',
+        'Visit Altit and Baltit Fort, then explore local cafes and viewpoints.',
         'Spend the day around Attabad Lake with a flexible sightseeing plan.',
       ],
       Skardu: [
@@ -211,7 +211,7 @@ export class ItineraryService {
       ],
       Lahore: [
         'Start with the Walled City, Badshahi Mosque, and an evening food street visit.',
-        'Mix museum time, shopping, and a slower café stop through Gulberg or MM Alam.',
+        'Mix museum time, shopping, and a slower cafe stop through Gulberg or MM Alam.',
         'Use the day for heritage sites and a focused local food crawl.',
       ],
       Islamabad: [
@@ -226,7 +226,7 @@ export class ItineraryService {
       ],
       Karachi: [
         'Explore art, food, and a short coastal sunset plan close to the city.',
-        'Visit historic districts, cafés, and key city landmarks at a comfortable pace.',
+        'Visit historic districts, cafes, and key city landmarks at a comfortable pace.',
         'Reserve time for markets and a flexible evening dining circuit.',
       ],
     };
