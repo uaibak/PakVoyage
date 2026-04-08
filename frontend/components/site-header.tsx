@@ -2,9 +2,8 @@ import Link from 'next/link';
 
 const navItems = [
   { href: '/', label: 'Home' },
+  { href: '/#destinations', label: 'Destinations' },
   { href: '/packages', label: 'Packages' },
-  { href: '/planner', label: 'Planner' },
-  { href: '/results', label: 'Results' },
 ];
 
 export function SiteHeader() {
@@ -37,7 +36,7 @@ export function SiteHeader() {
             ))}
           </nav>
           <Link href="/planner" className="cta-primary">
-            Start planning
+            Plan trip
           </Link>
         </div>
       </div>

@@ -31,6 +31,7 @@ PakVoyage/
 - Register for a generated custom itinerary through a dedicated registration page
 - Fixed travel packages with dates, seats, and per-seat pricing
 - Seat reservation flow for packages
+- Admin portal for operations control
 - Route-level loading states
 - Backend validation and structured exception handling
 - Backend file logging to a dedicated `backend/logs` directory
@@ -43,6 +44,8 @@ Frontend:
 - `/planner` - itinerary planner form
 - `/results` - generated itinerary view
 - `/custom-trip/register` - custom itinerary registration form
+- `/admin` - admin operations portal
+- `/admin/login` - admin sign-in page
 - `/destination/[id]` - destination detail page
 - `/packages` - package listing page
 - `/packages/[id]` - package detail and seat registration page
@@ -63,6 +66,21 @@ API endpoints:
 - `POST /api/itinerary/save`
 - `POST /api/itinerary/register-custom`
 - `GET /api/itinerary/:id`
+- `GET /api/admin/overview`
+- `GET /api/admin/destinations`
+- `POST /api/admin/destinations`
+- `PATCH /api/admin/destinations/:id`
+- `DELETE /api/admin/destinations/:id`
+- `GET /api/admin/packages?include_inactive=true`
+- `POST /api/admin/packages`
+- `PATCH /api/admin/packages/:id`
+- `DELETE /api/admin/packages/:id` (archive)
+- `GET /api/admin/bookings`
+- `PATCH /api/admin/bookings/:id/status`
+- `GET /api/admin/custom-registrations`
+- `PATCH /api/admin/custom-registrations/:id/status`
+- `POST /api/admin/auth/login`
+- `GET /api/admin/auth/me`
 
 ## Database Models
 
@@ -94,6 +112,9 @@ Backend uses [backend/.env.example](d:/Work/PakVoyage/backend/.env.example):
 ```env
 DATABASE_URL="postgresql://user:password@localhost:5432/pakvoyage_db?schema=public"
 PORT=3001
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=admin123
+ADMIN_TOKEN_SECRET=change-this-admin-token-secret
 ```
 
 Notes:
@@ -101,6 +122,7 @@ Notes:
 - Update `DATABASE_URL` to match your PostgreSQL credentials.
 - If your password contains characters like `@`, `#`, or `:`, URL-encode them inside `DATABASE_URL`.
 - The backend runs on port `3001` by default.
+- Set `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and a strong random `ADMIN_TOKEN_SECRET` for admin authentication.
 
 ## Getting Started
 
@@ -231,7 +253,7 @@ Pricing behavior for custom registrations:
 
 1. The generated itinerary total is treated as per-seat price
 2. User selects seat count (1 to 10)
-3. Estimated total updates live as `per-seat price × seats`
+3. Estimated total updates live as `per-seat price x seats`
 4. The computed total is sent as `estimated_total` in the registration payload
 
 Itinerary implementation references:
@@ -242,6 +264,33 @@ Itinerary implementation references:
 - [frontend/components/results-view.tsx](d:/Work/PakVoyage/frontend/components/results-view.tsx)
 - [frontend/components/custom-trip-registration-form.tsx](d:/Work/PakVoyage/frontend/components/custom-trip-registration-form.tsx)
 - [frontend/app/custom-trip/register/page.tsx](d:/Work/PakVoyage/frontend/app/custom-trip/register/page.tsx)
+
+## Admin Portal
+
+The admin portal is available at `/admin` for operational control.
+
+Current capabilities:
+
+- Overview dashboard (counts and confirmed revenue)
+- Destination management (create, list, update, delete with usage checks)
+- Package management (create, list active/inactive, update, archive)
+- Booking operations (list bookings, update status)
+- Custom registration operations (list registrations, update status)
+- Seat reconciliation when bookings move to/from `CANCELLED`
+- Admin authentication with token-based protected endpoints
+
+Admin implementation references:
+
+- [backend/src/admin/admin.module.ts](d:/Work/PakVoyage/backend/src/admin/admin.module.ts)
+- [backend/src/admin/admin.controller.ts](d:/Work/PakVoyage/backend/src/admin/admin.controller.ts)
+- [backend/src/admin/admin.service.ts](d:/Work/PakVoyage/backend/src/admin/admin.service.ts)
+- [backend/src/admin/auth/admin-auth.controller.ts](d:/Work/PakVoyage/backend/src/admin/auth/admin-auth.controller.ts)
+- [backend/src/admin/auth/admin-auth.service.ts](d:/Work/PakVoyage/backend/src/admin/auth/admin-auth.service.ts)
+- [backend/src/admin/auth/admin-auth.guard.ts](d:/Work/PakVoyage/backend/src/admin/auth/admin-auth.guard.ts)
+- [frontend/app/admin/page.tsx](d:/Work/PakVoyage/frontend/app/admin/page.tsx)
+- [frontend/app/admin/login/page.tsx](d:/Work/PakVoyage/frontend/app/admin/login/page.tsx)
+- [frontend/components/admin-portal.tsx](d:/Work/PakVoyage/frontend/components/admin-portal.tsx)
+- [frontend/components/admin-login-form.tsx](d:/Work/PakVoyage/frontend/components/admin-login-form.tsx)
 
 ## How Package Booking Works
 
@@ -304,6 +353,7 @@ The frontend and backend have both been built successfully during implementation
 ## Known Notes
 
 - This is an MVP, so authentication is not fully implemented yet.
+- Admin endpoints are protected with token-based admin auth, but RBAC and multi-admin management are not implemented yet.
 - `user_id` on itineraries is optional.
 - `user_id` on bookings is also optional.
 - Saved itineraries exist in the database even without a linked user.
