@@ -94,7 +94,7 @@ model Booking {
   full_name        String
   email            String
   phone            String
-  national_id      String?
+  national_id      String
   seats            Int
   status           BookingStatus @default(PENDING)
   total_amount     Int
@@ -112,6 +112,7 @@ model CustomTripRegistration {
   full_name        String
   email            String
   phone            String
+  national_id      String
   seats            Int
   days             Int
   budget           Int

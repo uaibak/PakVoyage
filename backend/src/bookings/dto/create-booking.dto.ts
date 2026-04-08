@@ -1,6 +1,7 @@
 import {
   IsEmail,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
   Max,
@@ -16,17 +17,20 @@ export class CreateBookingDto {
   user_id?: string;
 
   @IsString()
+  @IsNotEmpty()
   full_name!: string;
 
   @IsEmail()
+  @IsNotEmpty()
   email!: string;
 
   @IsString()
+  @IsNotEmpty()
   phone!: string;
 
-  @IsOptional()
   @IsString()
-  national_id?: string;
+  @IsNotEmpty()
+  national_id!: string;
 
   @IsInt()
   @Min(1)

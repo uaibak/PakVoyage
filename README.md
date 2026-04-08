@@ -28,7 +28,7 @@ PakVoyage/
   - interests: `mountains`, `culture`, `food`
 - Cost breakdown with hotel, transport, and food estimates
 - Save itinerary to PostgreSQL
-- Register for a generated custom itinerary directly from results
+- Register for a generated custom itinerary through a dedicated registration page
 - Fixed travel packages with dates, seats, and per-seat pricing
 - Seat reservation flow for packages
 - Route-level loading states
@@ -42,6 +42,7 @@ Frontend:
 - `/` - homepage
 - `/planner` - itinerary planner form
 - `/results` - generated itinerary view
+- `/custom-trip/register` - custom itinerary registration form
 - `/destination/[id]` - destination detail page
 - `/packages` - package listing page
 - `/packages/[id]` - package detail and seat registration page
@@ -211,19 +212,27 @@ When a user generates a plan on the frontend and clicks save:
 
 ## How Custom Itinerary Registration Works
 
-Travelers can register for a generated itinerary from the results page:
+Travelers can register for a generated itinerary from a dedicated form page:
 
 1. Generate a custom itinerary in `/planner`
 2. Open `/results`
-3. Fill traveler details in the "Register this custom itinerary" form
-4. Submit the registration
+3. Click "Continue to registration form"
+4. Fill traveler details in `/custom-trip/register`
+5. Submit the registration
 
 When registration is created:
 
 1. The frontend sends a request to `POST /api/itinerary/register-custom`
-2. The backend validates traveler and itinerary payload fields
+2. The backend validates traveler and itinerary payload fields (including mandatory CNIC/passport)
 3. The backend stores a record in `custom_trip_registrations`
 4. A response returns registration ID and status (`PENDING` by default)
+
+Pricing behavior for custom registrations:
+
+1. The generated itinerary total is treated as per-seat price
+2. User selects seat count (1 to 10)
+3. Estimated total updates live as `per-seat price × seats`
+4. The computed total is sent as `estimated_total` in the registration payload
 
 Itinerary implementation references:
 
@@ -231,6 +240,8 @@ Itinerary implementation references:
 - [backend/src/itinerary/itinerary.service.ts](d:/Work/PakVoyage/backend/src/itinerary/itinerary.service.ts)
 - [backend/src/itinerary/dto/register-custom-trip.dto.ts](d:/Work/PakVoyage/backend/src/itinerary/dto/register-custom-trip.dto.ts)
 - [frontend/components/results-view.tsx](d:/Work/PakVoyage/frontend/components/results-view.tsx)
+- [frontend/components/custom-trip-registration-form.tsx](d:/Work/PakVoyage/frontend/components/custom-trip-registration-form.tsx)
+- [frontend/app/custom-trip/register/page.tsx](d:/Work/PakVoyage/frontend/app/custom-trip/register/page.tsx)
 
 ## How Package Booking Works
 

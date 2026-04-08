@@ -42,7 +42,7 @@ export function BookingForm({
           full_name: fullName,
           email,
           phone,
-          national_id: nationalId || undefined,
+          national_id: nationalId,
           seats: Number(seats),
           special_requests: specialRequests || undefined,
         }),
@@ -125,8 +125,11 @@ export function BookingForm({
           />
         </label>
         <label className="rounded-[22px] border border-slate-200 bg-white p-4">
-          <span className="text-[11px] uppercase tracking-[0.22em] text-slate-600">National ID</span>
+          <span className="text-[11px] uppercase tracking-[0.22em] text-slate-600">
+            CNIC / Passport number
+          </span>
           <input
+            required
             value={nationalId}
             onChange={(event) => setNationalId(event.target.value)}
             className="mt-3 w-full bg-transparent text-base text-slate-950 outline-none"

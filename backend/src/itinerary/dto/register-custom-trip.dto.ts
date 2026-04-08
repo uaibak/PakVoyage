@@ -30,6 +30,10 @@ export class RegisterCustomTripDto {
   @IsNotEmpty()
   readonly phone!: string;
 
+  @IsString()
+  @IsNotEmpty()
+  readonly national_id!: string;
+
   @Type(() => Number)
   @IsInt()
   @Min(1)

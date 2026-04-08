@@ -102,7 +102,7 @@ export interface CreateBookingRequest {
   full_name: string;
   email: string;
   phone: string;
-  national_id?: string;
+  national_id: string;
   seats: number;
   special_requests?: string;
 }
@@ -113,6 +113,7 @@ export interface CustomTripRegistration {
   full_name: string;
   email: string;
   phone: string;
+  national_id: string;
   seats: number;
   days: number;
   budget: number;

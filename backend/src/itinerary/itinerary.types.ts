@@ -36,6 +36,7 @@ export interface CustomTripRegistrationResponse {
   full_name: string;
   email: string;
   phone: string;
+  national_id: string;
   seats: number;
   days: number;
   budget: number;

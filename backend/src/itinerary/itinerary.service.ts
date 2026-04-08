@@ -128,6 +128,7 @@ export class ItineraryService {
             full_name: string;
             email: string;
             phone: string;
+            national_id: string;
             seats: number;
             days: number;
             budget: number;
@@ -147,6 +148,7 @@ export class ItineraryService {
         full_name: dto.full_name,
         email: dto.email,
         phone: dto.phone,
+        national_id: dto.national_id,
         seats: dto.seats,
         days: dto.days,
         budget: dto.budget,
