@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { DestinationCard } from '@/components/destination-card';
+import { PackageCard } from '@/components/package-card';
 import { SectionHeading } from '@/components/section-heading';
 import { StatPill } from '@/components/stat-pill';
 import { apiBaseUrl } from '@/lib/api';
-import { Destination } from '@/lib/types';
+import { Destination, TourPackage } from '@/lib/types';
 
 async function getDestinations(): Promise<Destination[]> {
   try {
@@ -21,9 +22,27 @@ async function getDestinations(): Promise<Destination[]> {
   }
 }
 
+async function getPackages(): Promise<TourPackage[]> {
+  try {
+    const response = await fetch(`${apiBaseUrl}/packages`, {
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    return (await response.json()) as TourPackage[];
+  } catch {
+    return [];
+  }
+}
+
 export default async function HomePage() {
   const destinations = await getDestinations();
+  const packages = await getPackages();
   const featuredDestinations = destinations.slice(0, 4);
+  const featuredPackages = packages.slice(0, 3);
 
   return (
     <div className="pb-24">
@@ -133,6 +152,31 @@ export default async function HomePage() {
           ) : (
             <div className="premium-card p-10 text-sm leading-7 text-slate-600">
               Destination data will appear here once the backend is running and seeded.
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="shell section-space pt-0">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <SectionHeading
+            eyebrow="Fixed departures"
+            title="Bookable travel packages with dates, seats, and pricing already defined"
+            description="For travelers who want a ready-made experience, PakVoyage now includes fixed packages you can reserve directly through the website."
+          />
+          <Link href="/packages" className="cta-secondary">
+            View all packages
+          </Link>
+        </div>
+
+        <div className="mt-10 grid gap-6 lg:grid-cols-3">
+          {featuredPackages.length > 0 ? (
+            featuredPackages.map((travelPackage) => (
+              <PackageCard key={travelPackage.id} travelPackage={travelPackage} />
+            ))
+          ) : (
+            <div className="premium-card p-10 text-sm leading-7 text-slate-700">
+              Package departures will appear here once the backend package data is seeded.
             </div>
           )}
         </div>

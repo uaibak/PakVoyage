@@ -16,6 +16,7 @@ model User {
   name        String?
   created_at  DateTime    @default(now())
   itineraries Itinerary[]
+  bookings    Booking[]
 
   @@map("users")
 }
@@ -60,4 +61,52 @@ model ItineraryDay {
   destination    Destination @relation(fields: [destination_id], references: [id])
 
   @@map("itinerary_days")
+}
+
+model TourPackage {
+  id             String      @id @default(cuid())
+  title          String
+  slug           String      @unique
+  region         String
+  summary        String
+  description    String
+  travel_date    DateTime
+  duration_days  Int
+  price_per_seat Int
+  total_seats    Int
+  available_seats Int
+  pickup_city    String
+  package_type   String
+  destinations   String[]
+  inclusions     String[]
+  is_active      Boolean     @default(true)
+  created_at     DateTime    @default(now())
+  bookings       Booking[]
+
+  @@map("packages")
+}
+
+model Booking {
+  id               String        @id @default(cuid())
+  package_id       String
+  user_id          String?
+  full_name        String
+  email            String
+  phone            String
+  national_id      String?
+  seats            Int
+  status           BookingStatus @default(PENDING)
+  total_amount     Int
+  special_requests String?
+  created_at       DateTime      @default(now())
+  package          TourPackage   @relation(fields: [package_id], references: [id])
+  user             User?         @relation(fields: [user_id], references: [id])
+
+  @@map("bookings")
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
 }

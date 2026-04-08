@@ -58,3 +58,51 @@ export interface SavedItinerary {
   created_at: string;
   itinerary_days: SavedItineraryDay[];
 }
+
+export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED';
+
+export interface TourPackage {
+  id: string;
+  title: string;
+  slug: string;
+  region: string;
+  summary: string;
+  description: string;
+  travel_date: string;
+  duration_days: number;
+  price_per_seat: number;
+  total_seats: number;
+  available_seats: number;
+  pickup_city: string;
+  package_type: string;
+  destinations: string[];
+  inclusions: string[];
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface Booking {
+  id: string;
+  package_id: string;
+  user_id: string | null;
+  full_name: string;
+  email: string;
+  phone: string;
+  national_id: string | null;
+  seats: number;
+  status: BookingStatus;
+  total_amount: number;
+  special_requests: string | null;
+  created_at: string;
+  package: TourPackage;
+}
+
+export interface CreateBookingRequest {
+  package_id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  national_id?: string;
+  seats: number;
+  special_requests?: string;
+}

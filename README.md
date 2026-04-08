@@ -1,6 +1,6 @@
 # PakVoyage
 
-PakVoyage is a full-stack MVP travel planner for Pakistan. It helps users explore destinations, generate itineraries based on trip length, budget, and interests, estimate trip costs, and save itineraries for later use.
+PakVoyage is a full-stack MVP travel planner for Pakistan. It helps users explore destinations, generate itineraries based on trip length, budget, and interests, estimate trip costs, save itineraries, and reserve seats for fixed travel packages.
 
 ## Stack
 
@@ -13,10 +13,10 @@ PakVoyage is a full-stack MVP travel planner for Pakistan. It helps users explor
 
 ```text
 PakVoyage/
-├─ backend/   # NestJS API + Prisma
-├─ frontend/  # Next.js App Router UI
-├─ README.md
-└─ .gitignore
+|- backend/   # NestJS API + Prisma
+|- frontend/  # Next.js App Router UI
+|- README.md
+\- .gitignore
 ```
 
 ## Features
@@ -28,6 +28,8 @@ PakVoyage/
   - interests: `mountains`, `culture`, `food`
 - Cost breakdown with hotel, transport, and food estimates
 - Save itinerary to PostgreSQL
+- Fixed travel packages with dates, seats, and per-seat pricing
+- Seat reservation flow for packages
 - Route-level loading states
 - Backend validation and structured exception handling
 - Backend file logging to a dedicated `backend/logs` directory
@@ -40,6 +42,8 @@ Frontend:
 - `/planner` - itinerary planner form
 - `/results` - generated itinerary view
 - `/destination/[id]` - destination detail page
+- `/packages` - package listing page
+- `/packages/[id]` - package detail and seat registration page
 
 Backend API base:
 
@@ -49,6 +53,10 @@ API endpoints:
 
 - `GET /api/destinations`
 - `GET /api/destinations/:id`
+- `GET /api/packages`
+- `GET /api/packages/:id`
+- `POST /api/bookings`
+- `GET /api/bookings/:id`
 - `POST /api/itinerary/generate`
 - `POST /api/itinerary/save`
 - `GET /api/itinerary/:id`
@@ -61,11 +69,18 @@ Defined in [backend/prisma/schema.prisma](d:/Work/PakVoyage/backend/prisma/schem
 - `Destination`
 - `Itinerary`
 - `ItineraryDay`
+- `TourPackage`
+- `Booking`
 
 Saved itineraries are stored in:
 
 - `itineraries`
 - `itinerary_days`
+
+Package reservations are stored in:
+
+- `packages`
+- `bookings`
 
 ## Environment Variables
 
@@ -128,7 +143,7 @@ npx prisma db push
 
 This project currently uses `db push` for the MVP schema flow.
 
-### 5. Seed sample destinations
+### 5. Seed sample data
 
 From [backend](d:/Work/PakVoyage/backend):
 
@@ -136,7 +151,10 @@ From [backend](d:/Work/PakVoyage/backend):
 npm run db:seed
 ```
 
-The seed inserts sample destinations such as Hunza, Skardu, Lahore, Islamabad, Swat Valley, and Karachi.
+The seed inserts:
+
+- sample destinations such as Hunza, Skardu, Lahore, Islamabad, Swat Valley, and Karachi
+- sample travel packages that can be booked from the website
 
 ## Running the Project
 
@@ -154,6 +172,8 @@ Useful backend scripts:
 - `npm run start:dev` - watch mode
 - `npm run build` - compile TypeScript
 - `npm run start:prod` - run compiled build
+- `npm run prisma:generate` - generate Prisma client
+- `npm run db:seed` - seed destinations and packages
 - `npm run lint` - type-check the backend
 
 ### Start the frontend
@@ -185,10 +205,39 @@ When a user generates a plan on the frontend and clicks save:
 3. Related `itinerary_days` rows are created for each day in the trip
 4. The saved itinerary can later be fetched with `GET /api/itinerary/:id`
 
-Implementation references:
+Itinerary implementation references:
 
 - [backend/src/itinerary/itinerary.controller.ts](d:/Work/PakVoyage/backend/src/itinerary/itinerary.controller.ts)
 - [backend/src/itinerary/itinerary.service.ts](d:/Work/PakVoyage/backend/src/itinerary/itinerary.service.ts)
+
+## How Package Booking Works
+
+Travelers can now reserve seats through the website:
+
+1. Open `/packages`
+2. Choose a package
+3. Open the package detail page
+4. Fill the seat registration form
+5. Submit the reservation
+
+When a booking is created:
+
+1. The frontend sends a request to `POST /api/bookings`
+2. The backend validates the request
+3. The backend checks seat availability
+4. A `bookings` record is created
+5. `available_seats` on the selected package is reduced
+6. A booking response with booking ID and total amount is returned
+
+Booking implementation references:
+
+- [backend/src/packages/packages.controller.ts](d:/Work/PakVoyage/backend/src/packages/packages.controller.ts)
+- [backend/src/packages/packages.service.ts](d:/Work/PakVoyage/backend/src/packages/packages.service.ts)
+- [backend/src/bookings/bookings.controller.ts](d:/Work/PakVoyage/backend/src/bookings/bookings.controller.ts)
+- [backend/src/bookings/bookings.service.ts](d:/Work/PakVoyage/backend/src/bookings/bookings.service.ts)
+- [frontend/app/packages/page.tsx](d:/Work/PakVoyage/frontend/app/packages/page.tsx)
+- [frontend/app/packages/[id]/page.tsx](d:/Work/PakVoyage/frontend/app/packages/[id]/page.tsx)
+- [frontend/components/booking-form.tsx](d:/Work/PakVoyage/frontend/components/booking-form.tsx)
 
 ## Logging
 
@@ -210,7 +259,7 @@ The backend includes:
 The frontend includes:
 
 - route-level loading states
-- user-facing API error parsing for itinerary actions
+- user-facing API error parsing for itinerary and booking actions
 
 ## Verification
 
@@ -223,8 +272,11 @@ The frontend and backend have both been built successfully during implementation
 
 - This is an MVP, so authentication is not fully implemented yet.
 - `user_id` on itineraries is optional.
+- `user_id` on bookings is also optional.
 - Saved itineraries exist in the database even without a linked user.
+- Package bookings are created with `PENDING` status by default.
 - If Next.js shows stale chunk or `_document` module errors, delete [frontend/.next](d:/Work/PakVoyage/frontend/.next) and restart the frontend dev server.
+- If the frontend still behaves as if old code is running, stop all `node.exe` processes, then restart backend and frontend.
 
 ## License
 
