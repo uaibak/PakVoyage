@@ -28,6 +28,7 @@ PakVoyage/
   - interests: `mountains`, `culture`, `food`
 - Cost breakdown with hotel, transport, and food estimates
 - Save itinerary to PostgreSQL
+- Register for a generated custom itinerary directly from results
 - Fixed travel packages with dates, seats, and per-seat pricing
 - Seat reservation flow for packages
 - Route-level loading states
@@ -59,6 +60,7 @@ API endpoints:
 - `GET /api/bookings/:id`
 - `POST /api/itinerary/generate`
 - `POST /api/itinerary/save`
+- `POST /api/itinerary/register-custom`
 - `GET /api/itinerary/:id`
 
 ## Database Models
@@ -69,6 +71,7 @@ Defined in [backend/prisma/schema.prisma](d:/Work/PakVoyage/backend/prisma/schem
 - `Destination`
 - `Itinerary`
 - `ItineraryDay`
+- `CustomTripRegistration`
 - `TourPackage`
 - `Booking`
 
@@ -76,6 +79,7 @@ Saved itineraries are stored in:
 
 - `itineraries`
 - `itinerary_days`
+- `custom_trip_registrations` for custom itinerary registration leads
 
 Package reservations are stored in:
 
@@ -205,10 +209,28 @@ When a user generates a plan on the frontend and clicks save:
 3. Related `itinerary_days` rows are created for each day in the trip
 4. The saved itinerary can later be fetched with `GET /api/itinerary/:id`
 
+## How Custom Itinerary Registration Works
+
+Travelers can register for a generated itinerary from the results page:
+
+1. Generate a custom itinerary in `/planner`
+2. Open `/results`
+3. Fill traveler details in the "Register this custom itinerary" form
+4. Submit the registration
+
+When registration is created:
+
+1. The frontend sends a request to `POST /api/itinerary/register-custom`
+2. The backend validates traveler and itinerary payload fields
+3. The backend stores a record in `custom_trip_registrations`
+4. A response returns registration ID and status (`PENDING` by default)
+
 Itinerary implementation references:
 
 - [backend/src/itinerary/itinerary.controller.ts](d:/Work/PakVoyage/backend/src/itinerary/itinerary.controller.ts)
 - [backend/src/itinerary/itinerary.service.ts](d:/Work/PakVoyage/backend/src/itinerary/itinerary.service.ts)
+- [backend/src/itinerary/dto/register-custom-trip.dto.ts](d:/Work/PakVoyage/backend/src/itinerary/dto/register-custom-trip.dto.ts)
+- [frontend/components/results-view.tsx](d:/Work/PakVoyage/frontend/components/results-view.tsx)
 
 ## How Package Booking Works
 
@@ -275,6 +297,7 @@ The frontend and backend have both been built successfully during implementation
 - `user_id` on bookings is also optional.
 - Saved itineraries exist in the database even without a linked user.
 - Package bookings are created with `PENDING` status by default.
+- Custom itinerary registrations are also created with `PENDING` status by default.
 - If Next.js shows stale chunk or `_document` module errors, delete [frontend/.next](d:/Work/PakVoyage/frontend/.next) and restart the frontend dev server.
 - If the frontend still behaves as if old code is running, stop all `node.exe` processes, then restart backend and frontend.
 

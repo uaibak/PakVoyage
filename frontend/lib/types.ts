@@ -106,3 +106,21 @@ export interface CreateBookingRequest {
   seats: number;
   special_requests?: string;
 }
+
+export interface CustomTripRegistration {
+  id: string;
+  itinerary_id: string | null;
+  full_name: string;
+  email: string;
+  phone: string;
+  seats: number;
+  days: number;
+  budget: number;
+  interests: TravelInterest[];
+  trip_summary: string;
+  destinations: string[];
+  estimated_total: number;
+  status: BookingStatus;
+  special_requests: string | null;
+  created_at: string;
+}

@@ -2,8 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Destination } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { GenerateItineraryDto } from './dto/generate-itinerary.dto';
+import { RegisterCustomTripDto } from './dto/register-custom-trip.dto';
 import { SaveItineraryDto } from './dto/save-itinerary.dto';
 import {
+  CustomTripRegistrationResponse,
   GeneratedItineraryDay,
   GeneratedItineraryResponse,
   SavedItineraryResponse,
@@ -98,6 +100,63 @@ export class ItineraryService {
     });
 
     return itinerary;
+  }
+
+  async registerCustomTrip(
+    dto: RegisterCustomTripDto,
+  ): Promise<CustomTripRegistrationResponse> {
+    if (dto.itinerary_id) {
+      const itinerary = await this.prisma.itinerary.findUnique({
+        where: {
+          id: dto.itinerary_id,
+        },
+        select: { id: true },
+      });
+
+      if (!itinerary) {
+        throw new NotFoundException(
+          `Itinerary with ID "${dto.itinerary_id}" was not found.`,
+        );
+      }
+    }
+
+    const prismaWithCustomRegistration = this.prisma as PrismaService & {
+      customTripRegistration: {
+        create: (args: {
+          data: {
+            itinerary_id?: string;
+            full_name: string;
+            email: string;
+            phone: string;
+            seats: number;
+            days: number;
+            budget: number;
+            interests: TravelInterest[];
+            trip_summary: string;
+            destinations: string[];
+            estimated_total: number;
+            special_requests?: string;
+          };
+        }) => Promise<CustomTripRegistrationResponse>;
+      };
+    };
+
+    return prismaWithCustomRegistration.customTripRegistration.create({
+      data: {
+        itinerary_id: dto.itinerary_id,
+        full_name: dto.full_name,
+        email: dto.email,
+        phone: dto.phone,
+        seats: dto.seats,
+        days: dto.days,
+        budget: dto.budget,
+        interests: dto.interests,
+        trip_summary: dto.trip_summary,
+        destinations: dto.destinations,
+        estimated_total: dto.estimated_total,
+        special_requests: dto.special_requests,
+      },
+    });
   }
 
   async findOne(id: string): Promise<SavedItineraryResponse> {

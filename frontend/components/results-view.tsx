@@ -6,15 +6,28 @@ import { apiBaseUrl } from '@/lib/api';
 import { parseApiError } from '@/lib/api-error';
 import { SectionHeading } from '@/components/section-heading';
 import { StatPill } from '@/components/stat-pill';
-import { GeneratedItinerary, SavedItinerary, TripRequest } from '@/lib/types';
+import {
+  CustomTripRegistration,
+  GeneratedItinerary,
+  SavedItinerary,
+  TripRequest,
+} from '@/lib/types';
 
 export function ResultsView() {
   const [itinerary, setItinerary] = useState<GeneratedItinerary | null>(null);
   const [tripRequest, setTripRequest] = useState<TripRequest | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>('');
+  const [saveError, setSaveError] = useState<string>('');
   const [saving, setSaving] = useState<boolean>(false);
   const [savedItinerary, setSavedItinerary] = useState<SavedItinerary | null>(null);
+  const [registering, setRegistering] = useState<boolean>(false);
+  const [registerError, setRegisterError] = useState<string>('');
+  const [registration, setRegistration] = useState<CustomTripRegistration | null>(null);
+  const [fullName, setFullName] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [phone, setPhone] = useState<string>('');
+  const [seats, setSeats] = useState<string>('1');
+  const [specialRequests, setSpecialRequests] = useState<string>('');
 
   useEffect(() => {
     try {
@@ -26,7 +39,7 @@ export function ResultsView() {
       );
       setTripRequest(storedRequest ? (JSON.parse(storedRequest) as TripRequest) : null);
     } catch {
-      setError('Saved itinerary data could not be read from your browser.');
+      setSaveError('Saved itinerary data could not be read from your browser.');
     } finally {
       setLoading(false);
     }
@@ -34,12 +47,12 @@ export function ResultsView() {
 
   const handleSave = async (): Promise<void> => {
     if (!itinerary || !tripRequest) {
-      setError('Generate an itinerary first before saving it.');
+      setSaveError('Generate an itinerary first before saving it.');
       return;
     }
 
     setSaving(true);
-    setError('');
+    setSaveError('');
 
     try {
       const response = await fetch(`${apiBaseUrl}/itinerary/save`, {
@@ -71,13 +84,61 @@ export function ResultsView() {
       const saved = (await response.json()) as SavedItinerary;
       setSavedItinerary(saved);
     } catch (requestError) {
-      setError(
+      setSaveError(
         requestError instanceof Error
           ? requestError.message
           : 'Something went wrong while saving the itinerary.',
       );
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleRegisterCustomTrip = async (): Promise<void> => {
+    if (!itinerary || !tripRequest) {
+      setRegisterError('Generate an itinerary first before registering this trip.');
+      return;
+    }
+
+    setRegistering(true);
+    setRegisterError('');
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/itinerary/register-custom`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          itinerary_id: savedItinerary?.id,
+          full_name: fullName,
+          email,
+          phone,
+          seats: Number(seats),
+          days: tripRequest.days,
+          budget: tripRequest.budget,
+          interests: tripRequest.interests,
+          trip_summary: itinerary.trip_summary,
+          destinations: itinerary.destinations.map((destination) => destination.name),
+          estimated_total: itinerary.cost_breakdown.total,
+          special_requests: specialRequests || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        throw await parseApiError(response);
+      }
+
+      const registrationResponse = (await response.json()) as CustomTripRegistration;
+      setRegistration(registrationResponse);
+    } catch (requestError) {
+      setRegisterError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Something went wrong while registering your custom trip.',
+      );
+    } finally {
+      setRegistering(false);
     }
   };
 
@@ -255,9 +316,9 @@ export function ResultsView() {
               </p>
             ) : null}
 
-            {error ? (
+            {saveError ? (
               <p className="mt-5 rounded-[24px] border border-rose-200 bg-rose-50 px-4 py-4 text-sm leading-6 text-rose-700">
-                {error}
+                {saveError}
               </p>
             ) : null}
 
@@ -276,6 +337,82 @@ export function ResultsView() {
                 ))}
               </div>
             </div>
+          </div>
+
+          <div className="premium-card p-6 md:p-7">
+            <p className="eyebrow">Travel registration</p>
+            <h2 className="mt-4 text-3xl text-slate-950 [font-family:var(--font-heading)]">
+              Register for this custom itinerary
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-slate-700">
+              If this generated plan works for you, submit your details and we will log your
+              registration against this exact itinerary proposal.
+            </p>
+
+            {registration ? (
+              <p className="mt-5 rounded-[24px] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-6 text-emerald-800">
+                Registration submitted. ID: {registration.id}
+              </p>
+            ) : (
+              <div className="mt-5 space-y-3">
+                <input
+                  type="text"
+                  required
+                  value={fullName}
+                  onChange={(event) => setFullName(event.target.value)}
+                  placeholder="Full name"
+                  className="w-full rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-[var(--emerald)]"
+                />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="Email"
+                  className="w-full rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-[var(--emerald)]"
+                />
+                <input
+                  type="text"
+                  required
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  placeholder="Phone"
+                  className="w-full rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-[var(--emerald)]"
+                />
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  required
+                  value={seats}
+                  onChange={(event) => setSeats(event.target.value)}
+                  placeholder="Seats"
+                  className="w-full rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-[var(--emerald)]"
+                />
+                <textarea
+                  rows={3}
+                  value={specialRequests}
+                  onChange={(event) => setSpecialRequests(event.target.value)}
+                  placeholder="Special requests (optional)"
+                  className="w-full resize-none rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-[var(--emerald)]"
+                />
+
+                <button
+                  type="button"
+                  onClick={handleRegisterCustomTrip}
+                  disabled={registering}
+                  className="cta-primary w-full justify-center disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {registering ? 'Submitting registration...' : 'Register this trip'}
+                </button>
+
+                {registerError ? (
+                  <p className="rounded-[20px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-700">
+                    {registerError}
+                  </p>
+                ) : null}
+              </div>
+            )}
           </div>
         </aside>
       </section>
