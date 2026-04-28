@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { Destination } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { GenerateItineraryDto } from './dto/generate-itinerary.dto';
@@ -22,7 +22,18 @@ type DestinationName =
 
 @Injectable()
 export class ItineraryService {
+  private readonly logger = new Logger(ItineraryService.name);
+
   constructor(private readonly prisma: PrismaService) {}
+
+  private generateId(prefix: string): string {
+    // Generates a short, meaningful ID like PV-CTR-A1B2C3
+    const randomPart = Math.random()
+      .toString(36)
+      .substring(2, 8)
+      .toUpperCase();
+    return `${prefix}-${randomPart}`;
+  }
 
   async generateItinerary(
     dto: GenerateItineraryDto,
@@ -32,7 +43,9 @@ export class ItineraryService {
     });
 
     if (destinations.length === 0) {
-      throw new NotFoundException('No destinations are available to build an itinerary.');
+      throw new BadRequestException(
+        'Itinerary generation failed: No destinations found in the database. Please ensure the database is seeded.',
+      );
     }
 
     const selectedDestinations = this.pickDestinations(destinations, dto);
@@ -68,38 +81,43 @@ export class ItineraryService {
   }
 
   async saveItinerary(dto: SaveItineraryDto): Promise<SavedItineraryResponse> {
-    const itinerary = await this.prisma.itinerary.create({
-      data: {
-        user_id: dto.user_id,
-        days: dto.days,
-        budget: dto.budget,
-        interests: dto.interests,
-        total_cost: dto.total_cost,
-        hotel_cost: dto.hotel_cost,
-        transport_cost: dto.transport_cost,
-        food_cost: dto.food_cost,
-        itinerary_days: {
-          create: dto.itinerary_days.map((day) => ({
-            day_number: day.day_number,
-            destination_id: day.destination_id,
-            activities: day.activities,
-            cost: day.cost,
-          })),
-        },
-      },
-      include: {
-        itinerary_days: {
-          include: {
-            destination: true,
-          },
-          orderBy: {
-            day_number: 'asc',
+    try {
+      const itinerary = await this.prisma.itinerary.create({
+        data: {
+          id: this.generateId('PV-ITN'),
+          user_id: dto.user_id,
+          days: dto.days,
+          budget: dto.budget,
+          interests: dto.interests,
+          total_cost: dto.total_cost,
+          hotel_cost: dto.hotel_cost,
+          transport_cost: dto.transport_cost,
+          food_cost: dto.food_cost,
+          itinerary_days: {
+            create: dto.itinerary_days.map((day) => ({
+              day_number: day.day_number,
+              destination_id: day.destination_id,
+              activities: day.activities,
+              cost: day.cost,
+            })),
           },
         },
-      },
-    });
-
-    return itinerary;
+        include: {
+          itinerary_days: {
+            include: {
+              destination: true,
+            },
+            orderBy: {
+              day_number: 'asc',
+            },
+          },
+        },
+      });
+      return itinerary;
+    } catch (error) {
+      this.logger.error(`Failed to save itinerary: ${error.message}`, error.stack);
+      throw new InternalServerErrorException('Failed to save itinerary. Please try again.');
+    }
   }
 
   async registerCustomTrip(
@@ -120,45 +138,17 @@ export class ItineraryService {
       }
     }
 
-    const prismaWithCustomRegistration = this.prisma as PrismaService & {
-      customTripRegistration: {
-        create: (args: {
-          data: {
-            itinerary_id?: string;
-            full_name: string;
-            email: string;
-            phone: string;
-            national_id: string;
-            seats: number;
-            days: number;
-            budget: number;
-            interests: TravelInterest[];
-            trip_summary: string;
-            destinations: string[];
-            estimated_total: number;
-            special_requests?: string;
-          };
-        }) => Promise<CustomTripRegistrationResponse>;
-      };
-    };
-
-    return prismaWithCustomRegistration.customTripRegistration.create({
-      data: {
-        itinerary_id: dto.itinerary_id,
-        full_name: dto.full_name,
-        email: dto.email,
-        phone: dto.phone,
-        national_id: dto.national_id,
-        seats: dto.seats,
-        days: dto.days,
-        budget: dto.budget,
-        interests: dto.interests,
-        trip_summary: dto.trip_summary,
-        destinations: dto.destinations,
-        estimated_total: dto.estimated_total,
-        special_requests: dto.special_requests,
-      },
-    });
+    try {
+      return await this.prisma.customTripRegistration.create({
+        data: {
+          id: this.generateId('PV-CTR'),
+          ...dto, // Ensure DTO matches Prisma schema exactly
+        },
+      });
+    } catch (error) {
+      this.logger.error(`Failed to register custom trip: ${error.message}`, error.stack);
+      throw new BadRequestException('Failed to process registration. Ensure all traveler details are correct.');
+    }
   }
 
   async findOne(id: string): Promise<SavedItineraryResponse> {
@@ -187,7 +177,8 @@ export class ItineraryService {
     destinations: Destination[],
     dto: GenerateItineraryDto,
   ): Destination[] {
-    const preferredNames = this.buildPriorityList(dto.interests);
+    // TODO: Shift to a tag-based filter in Prisma query instead of in-memory filtering
+    const preferredNames = this.buildPriorityList(dto.interests as TravelInterest[]);
     const destinationCount = this.getDestinationCount(dto.days);
 
     const priorityMatches = preferredNames

@@ -22,12 +22,15 @@ PakVoyage/
 ## Features
 
 - Destination listing and destination detail pages
+- Meaningful reference IDs for all records (e.g., `PV-ITN-XXXXXX`, `PV-CTR-XXXXXX`)
 - Itinerary generation using:
   - trip days
   - budget
   - interests: `mountains`, `culture`, `food`
 - Cost breakdown with hotel, transport, and food estimates
+- Interactive budget visualization and trip rhythm hints in the planner
 - Save itinerary to PostgreSQL
+- Itinerary sharing capability via clipboard links
 - Register for a generated custom itinerary through a dedicated registration page
 - Fixed travel packages with dates, seats, and per-seat pricing
 - Seat reservation flow for packages
@@ -229,8 +232,9 @@ When a user generates a plan on the frontend and clicks save:
 
 1. The frontend sends a request to `POST /api/itinerary/save`
 2. The backend creates an `itineraries` record
-3. Related `itinerary_days` rows are created for each day in the trip
-4. The saved itinerary can later be fetched with `GET /api/itinerary/:id`
+3. A meaningful reference ID (prefix `PV-ITN`) is generated for the itinerary
+4. Related `itinerary_days` rows are created for each day in the trip
+5. The saved itinerary can later be fetched with `GET /api/itinerary/:id`
 
 ## How Custom Itinerary Registration Works
 
@@ -246,7 +250,7 @@ When registration is created:
 
 1. The frontend sends a request to `POST /api/itinerary/register-custom`
 2. The backend validates traveler and itinerary payload fields (including mandatory CNIC/passport)
-3. The backend stores a record in `custom_trip_registrations`
+3. The backend generates a registration ID (prefix `PV-CTR`) and stores the record
 4. A response returns registration ID and status (`PENDING` by default)
 
 Pricing behavior for custom registrations:
@@ -273,6 +277,7 @@ Current capabilities:
 
 - Overview dashboard (counts and confirmed revenue)
 - Destination management (create, list, update, delete with usage checks)
+- Confirmation dialogs for destructive actions (e.g., deleting destinations)
 - Package management (create, list active/inactive, update, archive)
 - Booking operations (list bookings, update status)
 - Custom registration operations (list registrations, update status)
@@ -335,8 +340,9 @@ The backend includes:
 
 - DTO validation with Nest validation pipes
 - structured exception responses
-- Prisma-aware exception handling
+- Enhanced Prisma-aware exception handling (mapping database codes to user-friendly messages)
 - centralized logging for runtime errors
+- Service-level try-catch blocks for database resilience
 
 The frontend includes:
 

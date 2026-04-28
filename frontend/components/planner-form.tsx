@@ -48,6 +48,13 @@ export function PlannerForm() {
     return 'Flexible budget: room for richer pacing and upgrades.';
   }, [budget]);
 
+  const budgetPercentage = useMemo(() => {
+    const b = Number(budget);
+    const min = 10000;
+    const max = 200000;
+    return Math.min(Math.max(((b - min) / (max - min)) * 100, 0), 100);
+  }, [budget]);
+
   const toggleInterest = (interest: TravelInterest): void => {
     setInterests((current) =>
       current.includes(interest)
@@ -137,6 +144,9 @@ export function PlannerForm() {
                 <p className="mt-3 text-3xl text-white [font-family:var(--font-heading)]">
                   PKR {Number(budget).toLocaleString()}
                 </p>
+                <div className="mt-4 h-1.5 w-full rounded-full bg-white/10">
+                  <div className="h-full rounded-full bg-emerald-400 transition-all duration-500" style={{ width: `${budgetPercentage}%` }} />
+                </div>
                 <p className="mt-3 text-sm leading-7 text-slate-200">{budgetTone}</p>
               </div>
             </div>

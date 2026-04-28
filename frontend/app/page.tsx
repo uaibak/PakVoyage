@@ -9,7 +9,7 @@ import { Destination, TourPackage } from '@/lib/types';
 async function getDestinations(): Promise<Destination[]> {
   try {
     const response = await fetch(`${apiBaseUrl}/destinations`, {
-      cache: 'no-store',
+      next: { revalidate: 3600 }, // Cache for 1 hour
     });
 
     if (!response.ok) {
@@ -25,7 +25,7 @@ async function getDestinations(): Promise<Destination[]> {
 async function getPackages(): Promise<TourPackage[]> {
   try {
     const response = await fetch(`${apiBaseUrl}/packages`, {
-      cache: 'no-store',
+      next: { revalidate: 3600 },
     });
 
     if (!response.ok) {

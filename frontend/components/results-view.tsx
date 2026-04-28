@@ -18,6 +18,7 @@ export function ResultsView() {
   const [loading, setLoading] = useState<boolean>(true);
   const [saveError, setSaveError] = useState<string>('');
   const [saving, setSaving] = useState<boolean>(false);
+  const [shareSuccess, setShareSuccess] = useState<boolean>(false);
   const [savedItinerary, setSavedItinerary] = useState<SavedItinerary | null>(null);
 
   useEffect(() => {
@@ -29,8 +30,9 @@ export function ResultsView() {
         storedItinerary ? (JSON.parse(storedItinerary) as GeneratedItinerary) : null,
       );
       setTripRequest(storedRequest ? (JSON.parse(storedRequest) as TripRequest) : null);
-    } catch {
-      setSaveError('Saved itinerary data could not be read from your browser.');
+    } catch (err) {
+      console.error('Error reading local storage:', err);
+      setSaveError('The session data has been corrupted. Please try generating a new itinerary.');
     } finally {
       setLoading(false);
     }
@@ -86,6 +88,15 @@ export function ResultsView() {
     }
   };
 
+  const handleShare = () => {
+    if (typeof window !== 'undefined') {
+      const url = window.location.href;
+      navigator.clipboard.writeText(url);
+      setShareSuccess(true);
+      setTimeout(() => setShareSuccess(false), 3000);
+    }
+  };
+
   if (loading) {
     return <p className="text-sm text-slate-500">Loading your itinerary...</p>;
   }
@@ -122,6 +133,12 @@ export function ResultsView() {
               Everything below is arranged to help you review the trip quickly and save it with
               confidence.
             </p>
+            {shareSuccess && (
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-4 py-2 text-xs font-medium text-emerald-200 border border-emerald-500/30 animate-in fade-in slide-in-from-top-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Link copied to clipboard!
+              </div>
+            )}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
@@ -162,11 +179,11 @@ export function ResultsView() {
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[rgba(34,101,74,0.1)] text-sm font-semibold text-[var(--pine)]">
                         {String(day.day_number).padStart(2, '0')}
                       </div>
-                      <div>
+                      <div className="flex flex-col">
                         <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">
                           {day.destination.region}
                         </p>
-                        <h3 className="mt-2 text-2xl text-slate-950 [font-family:var(--font-heading)]">
+                        <h3 className="mt-1 text-2xl text-slate-950 [font-family:var(--font-heading)]">
                           {day.destination.name}
                         </h3>
                       </div>
@@ -256,7 +273,7 @@ export function ResultsView() {
 
             {savedItinerary ? (
               <p className="mt-5 rounded-[24px] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-6 text-emerald-800">
-                Itinerary saved successfully. ID: {savedItinerary.id}
+                Itinerary saved successfully. Reference: <strong>{savedItinerary.id}</strong>
               </p>
             ) : null}
 

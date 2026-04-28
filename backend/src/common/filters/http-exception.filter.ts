@@ -125,7 +125,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
       case 'P2003':
       case 'P2025':
         return HttpStatus.NOT_FOUND;
+      case 'P2011':
+        return HttpStatus.BAD_REQUEST;
       case 'P2021':
+      case 'P2024':
         return HttpStatus.SERVICE_UNAVAILABLE;
       default:
         return HttpStatus.BAD_REQUEST;
@@ -140,8 +143,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
         return 'A record with the same unique value already exists.';
       case 'P2003':
         return 'A related record was not found for this request.';
+      case 'P2011':
+        return 'A required field was missing or null in the submission.';
       case 'P2021':
         return 'The required database table does not exist yet.';
+      case 'P2024':
+        return 'A database connection timeout occurred.';
       case 'P2025':
         return 'The requested record could not be found.';
       default:

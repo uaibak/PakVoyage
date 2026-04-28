@@ -186,6 +186,7 @@ export function AdminPortal() {
   const [opsTab, setOpsTab] = useState<OpsTab>('bookings');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+  const [success, setSuccess] = useState<string>('');
   const [adminUsername, setAdminUsername] = useState<string>('');
   const [busyId, setBusyId] = useState<string>('');
   const [showDestinationForm, setShowDestinationForm] = useState<boolean>(false);
@@ -215,9 +216,10 @@ export function AdminPortal() {
     void run();
   }, [router]);
 
-  const refreshAll = async (): Promise<void> => {
-    setLoading(true);
+  const refreshAll = async (showGlobalLoading = true): Promise<void> => {
+    if (showGlobalLoading) setLoading(true);
     setError('');
+    // We don't clear success here so it can persist for a few seconds if set by an action
     try {
       const profile = await getAdminProfile();
       setAdminUsername(profile.username);
@@ -256,6 +258,7 @@ export function AdminPortal() {
     event.preventDefault();
     setBusyId('create-destination');
     setError('');
+    setSuccess('');
     try {
       const response = await adminFetch(`${apiBaseUrl}/admin/destinations`, {
         method: 'POST',
@@ -265,7 +268,8 @@ export function AdminPortal() {
       if (!response.ok) throw await parseApiError(response);
       setDestinationForm(buildDestinationForm());
       setShowDestinationForm(false);
-      await refreshAll();
+      setSuccess('Destination created successfully.');
+      await refreshAll(false);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Could not create destination.');
     } finally {
@@ -280,6 +284,7 @@ export function AdminPortal() {
     event.preventDefault();
     setBusyId(id);
     setError('');
+    setSuccess('');
     try {
       const response = await adminFetch(`${apiBaseUrl}/admin/destinations/${id}`, {
         method: 'PATCH',
@@ -289,7 +294,8 @@ export function AdminPortal() {
       if (!response.ok) throw await parseApiError(response);
       setEditingDestinationId('');
       setDestinationForm(buildDestinationForm());
-      await refreshAll();
+      setSuccess('Destination updated successfully.');
+      await refreshAll(false);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Could not update destination.');
     } finally {
@@ -301,6 +307,7 @@ export function AdminPortal() {
     event.preventDefault();
     setBusyId('create-package');
     setError('');
+    setSuccess('');
     try {
       const response = await adminFetch(`${apiBaseUrl}/admin/packages`, {
         method: 'POST',
@@ -313,7 +320,8 @@ export function AdminPortal() {
       if (!response.ok) throw await parseApiError(response);
       setPackageForm(buildPackageForm());
       setShowPackageForm(false);
-      await refreshAll();
+      setSuccess('Tour package created successfully.');
+      await refreshAll(false);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Could not create package.');
     } finally {
@@ -328,6 +336,7 @@ export function AdminPortal() {
     event.preventDefault();
     setBusyId(id);
     setError('');
+    setSuccess('');
     try {
       const response = await adminFetch(`${apiBaseUrl}/admin/packages/${id}`, {
         method: 'PATCH',
@@ -337,7 +346,8 @@ export function AdminPortal() {
       if (!response.ok) throw await parseApiError(response);
       setEditingPackageId('');
       setPackageForm(buildPackageForm());
-      await refreshAll();
+      setSuccess('Tour package updated successfully.');
+      await refreshAll(false);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Could not update package.');
     } finally {
@@ -347,48 +357,82 @@ export function AdminPortal() {
 
   const patchBookingStatus = async (id: string, status: BookingStatus): Promise<void> => {
     setBusyId(id);
-    const response = await adminFetch(`${apiBaseUrl}/admin/bookings/${id}/status`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    });
-    if (!response.ok) setError((await parseApiError(response)).message);
-    await refreshAll();
-    setBusyId('');
+    setError('');
+    setSuccess('');
+    try {
+      const response = await adminFetch(`${apiBaseUrl}/admin/bookings/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) throw await parseApiError(response);
+      setSuccess(`Booking ${id} updated to ${status}.`);
+      await refreshAll(false);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Could not update booking status.');
+    } finally {
+      setBusyId('');
+    }
   };
 
   const patchCustomStatus = async (id: string, status: BookingStatus): Promise<void> => {
     setBusyId(id);
-    const response = await adminFetch(`${apiBaseUrl}/admin/custom-registrations/${id}/status`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    });
-    if (!response.ok) setError((await parseApiError(response)).message);
-    await refreshAll();
-    setBusyId('');
+    setError('');
+    setSuccess('');
+    try {
+      const response = await adminFetch(`${apiBaseUrl}/admin/custom-registrations/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) throw await parseApiError(response);
+      setSuccess(`Registration ${id} updated to ${status}.`);
+      await refreshAll(false);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Could not update registration status.');
+    } finally {
+      setBusyId('');
+    }
   };
 
   const patchPackage = async (pkg: AdminPackage, patch: Partial<AdminPackage>): Promise<void> => {
     setBusyId(pkg.id);
-    const response = await adminFetch(`${apiBaseUrl}/admin/packages/${pkg.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(patch),
-    });
-    if (!response.ok) setError((await parseApiError(response)).message);
-    await refreshAll();
-    setBusyId('');
+    setError('');
+    setSuccess('');
+    try {
+      const response = await adminFetch(`${apiBaseUrl}/admin/packages/${pkg.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (!response.ok) throw await parseApiError(response);
+      setSuccess(`Package "${pkg.title}" visibility updated.`);
+      await refreshAll(false);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Could not update package.');
+    } finally {
+      setBusyId('');
+    }
   };
 
   const deleteDestination = async (id: string): Promise<void> => {
+    if (!window.confirm('Are you sure you want to delete this destination? This cannot be undone.')) return;
+    
     setBusyId(id);
-    const response = await adminFetch(`${apiBaseUrl}/admin/destinations/${id}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) setError((await parseApiError(response)).message);
-    await refreshAll();
-    setBusyId('');
+    setError('');
+    setSuccess('');
+    try {
+      const response = await adminFetch(`${apiBaseUrl}/admin/destinations/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw await parseApiError(response);
+      setSuccess('Destination deleted successfully.');
+      await refreshAll(false);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Could not delete destination.');
+    } finally {
+      setBusyId('');
+    }
   };
 
   const summary = overview
@@ -685,7 +729,10 @@ export function AdminPortal() {
               {opsTab === 'bookings'
                 ? bookings.map((item) => (
                     <article key={item.id} className="rounded-[16px] border border-slate-200 bg-white p-4">
-                      <p className="font-semibold text-slate-900">{item.full_name}</p>
+                      <div className="flex justify-between items-start">
+                        <p className="font-semibold text-slate-900">{item.full_name}</p>
+                        <span className="text-[10px] font-mono bg-slate-100 px-2 py-1 rounded text-slate-500">{item.id}</span>
+                      </div>
                       <p className="text-sm text-slate-600">{item.package.title} | {item.seats} seats</p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {statuses.map((status) => (
@@ -696,7 +743,10 @@ export function AdminPortal() {
                   ))
                 : customRegistrations.map((item) => (
                     <article key={item.id} className="rounded-[16px] border border-slate-200 bg-white p-4">
-                      <p className="font-semibold text-slate-900">{item.full_name}</p>
+                      <div className="flex justify-between items-start">
+                        <p className="font-semibold text-slate-900">{item.full_name}</p>
+                        <span className="text-[10px] font-mono bg-slate-100 px-2 py-1 rounded text-slate-500">{item.id}</span>
+                      </div>
                       <p className="text-sm text-slate-600">{item.seats} seats | PKR {item.estimated_total.toLocaleString()}</p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {statuses.map((status) => (
