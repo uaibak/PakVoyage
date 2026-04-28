@@ -4,9 +4,15 @@ export interface Destination {
   id: string;
   name: string;
   region: string;
+  short_summary: string;
   description: string;
   best_time: string;
   avg_cost_per_day: number;
+  highlights: string[];
+  travel_tips: string[];
+  ideal_for: string[];
+  cover_image_url: string;
+  gallery_image_urls: string[];
 }
 
 export interface GeneratedItineraryDay {
@@ -68,6 +74,9 @@ export interface TourPackage {
   region: string;
   summary: string;
   description: string;
+  stay_style: string;
+  difficulty_level: string;
+  departure_notes: string;
   travel_date: string;
   duration_days: number;
   price_per_seat: number;
@@ -77,6 +86,10 @@ export interface TourPackage {
   package_type: string;
   destinations: string[];
   inclusions: string[];
+  exclusions: string[];
+  itinerary_overview: string[];
+  cover_image_url: string;
+  gallery_image_urls: string[];
   is_active: boolean;
   created_at: string;
 }

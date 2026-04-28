@@ -25,9 +25,15 @@ model Destination {
   id                String         @id @default(cuid())
   name              String         @unique
   region            String
+  short_summary     String
   description       String
   best_time         String
   avg_cost_per_day  Int
+  highlights        String[]
+  travel_tips       String[]
+  ideal_for         String[]
+  cover_image_url   String
+  gallery_image_urls String[]
   itinerary_days    ItineraryDay[]
 
   @@map("destinations")
@@ -71,6 +77,9 @@ model TourPackage {
   region         String
   summary        String
   description    String
+  stay_style     String
+  difficulty_level String
+  departure_notes String
   travel_date    DateTime
   duration_days  Int
   price_per_seat Int
@@ -80,6 +89,10 @@ model TourPackage {
   package_type   String
   destinations   String[]
   inclusions     String[]
+  exclusions     String[]
+  itinerary_overview String[]
+  cover_image_url String
+  gallery_image_urls String[]
   is_active      Boolean     @default(true)
   created_at     DateTime    @default(now())
   bookings       Booking[]

@@ -31,6 +31,18 @@ export class UpdatePackageAdminDto {
   description?: string;
 
   @IsOptional()
+  @IsString()
+  stay_style?: string;
+
+  @IsOptional()
+  @IsString()
+  difficulty_level?: string;
+
+  @IsOptional()
+  @IsString()
+  departure_notes?: string;
+
+  @IsOptional()
   @IsDateString()
   travel_date?: string;
 
@@ -75,6 +87,25 @@ export class UpdatePackageAdminDto {
   @IsArray()
   @IsString({ each: true })
   inclusions?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  exclusions?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  itinerary_overview?: string[];
+
+  @IsOptional()
+  @IsString()
+  cover_image_url?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  gallery_image_urls?: string[];
 
   @IsOptional()
   @Type(() => Boolean)

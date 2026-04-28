@@ -31,6 +31,18 @@ export class CreatePackageAdminDto {
   @IsNotEmpty()
   description!: string;
 
+  @IsString()
+  @IsNotEmpty()
+  stay_style!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  difficulty_level!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  departure_notes!: string;
+
   @IsDateString()
   travel_date!: string;
 
@@ -71,6 +83,25 @@ export class CreatePackageAdminDto {
   @ArrayMinSize(1)
   @IsString({ each: true })
   inclusions!: string[];
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsString({ each: true })
+  exclusions!: string[];
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsString({ each: true })
+  itinerary_overview!: string[];
+
+  @IsString()
+  @IsNotEmpty()
+  cover_image_url!: string;
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsString({ each: true })
+  gallery_image_urls!: string[];
 
   @Type(() => Boolean)
   @IsBoolean()

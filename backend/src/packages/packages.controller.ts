@@ -1,14 +1,15 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { TourPackage } from '@prisma/client';
 import { PackagesService } from './packages.service';
+import { ListPackagesDto } from './dto/list-packages.dto';
 
 @Controller('packages')
 export class PackagesController {
   constructor(private readonly packagesService: PackagesService) {}
 
   @Get()
-  async findAll(): Promise<TourPackage[]> {
-    return this.packagesService.findAll();
+  async findAll(@Query() query: ListPackagesDto): Promise<TourPackage[]> {
+    return this.packagesService.findAll(query);
   }
 
   @Get(':id')

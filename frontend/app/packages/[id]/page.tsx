@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { BookingForm } from '@/components/booking-form';
+import { GalleryStrip } from '@/components/gallery-strip';
 import { StatPill } from '@/components/stat-pill';
 import { apiBaseUrl } from '@/lib/api';
 import { TourPackage } from '@/lib/types';
@@ -45,7 +46,13 @@ export default async function PackageDetailPage({
 
   return (
     <div className="shell py-16">
-      <section className="premium-card-dark overflow-hidden px-8 py-10 md:px-12 md:py-14">
+      <section className="premium-card-dark overflow-hidden">
+        <img
+          src={travelPackage.cover_image_url}
+          alt={travelPackage.title}
+          className="h-72 w-full object-cover opacity-75"
+        />
+        <div className="px-8 py-10 md:px-12 md:py-14">
         <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-emerald-200">
@@ -68,6 +75,7 @@ export default async function PackageDetailPage({
               tone="dark"
             />
           </div>
+        </div>
         </div>
       </section>
 
@@ -104,6 +112,14 @@ export default async function PackageDetailPage({
                   ))}
                 </div>
               </div>
+              <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                <p className="text-[11px] uppercase tracking-[0.22em] text-slate-600">Stay style</p>
+                <p className="mt-2 text-sm font-semibold text-slate-900">{travelPackage.stay_style}</p>
+              </div>
+              <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                <p className="text-[11px] uppercase tracking-[0.22em] text-slate-600">Difficulty</p>
+                <p className="mt-2 text-sm font-semibold text-slate-900">{travelPackage.difficulty_level}</p>
+              </div>
             </div>
           </div>
 
@@ -121,6 +137,48 @@ export default async function PackageDetailPage({
                   {item}
                 </div>
               ))}
+            </div>
+
+            <p className="eyebrow mt-8">What to budget separately</p>
+            <div className="mt-4 space-y-3">
+              {travelPackage.exclusions.map((item) => (
+                <div
+                  key={item}
+                  className="rounded-[20px] border border-slate-200 bg-[rgba(248,243,235,0.9)] px-4 py-4 text-sm leading-6 text-slate-700"
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="premium-card p-7 md:p-8">
+            <p className="eyebrow">Route rhythm</p>
+            <h2 className="mt-4 text-4xl text-slate-950 [font-family:var(--font-heading)]">
+              Package pacing
+            </h2>
+            <div className="mt-6 space-y-3">
+              {travelPackage.itinerary_overview.map((item) => (
+                <div
+                  key={item}
+                  className="rounded-[20px] border border-slate-200 bg-white px-4 py-4 text-sm leading-6 text-slate-700"
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 rounded-[22px] border border-slate-200 bg-[rgba(248,243,235,0.9)] px-5 py-5 text-sm leading-7 text-slate-700">
+              {travelPackage.departure_notes}
+            </div>
+          </div>
+
+          <div className="premium-card p-7 md:p-8">
+            <p className="eyebrow">Gallery</p>
+            <h2 className="mt-4 text-4xl text-slate-950 [font-family:var(--font-heading)]">
+              Visual preview
+            </h2>
+            <div className="mt-6">
+              <GalleryStrip images={travelPackage.gallery_image_urls} title={travelPackage.title} />
             </div>
           </div>
         </div>

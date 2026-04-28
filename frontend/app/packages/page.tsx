@@ -3,9 +3,27 @@ import { SectionHeading } from '@/components/section-heading';
 import { apiBaseUrl } from '@/lib/api';
 import { TourPackage } from '@/lib/types';
 
-async function getPackages(): Promise<TourPackage[]> {
+interface PackagesPageProps {
+  searchParams?: {
+    search?: string;
+    region?: string;
+    package_type?: string;
+    month?: string;
+    max_price?: string;
+  };
+}
+
+async function getPackages(searchParams?: PackagesPageProps['searchParams']): Promise<TourPackage[]> {
   try {
-    const response = await fetch(`${apiBaseUrl}/packages`, {
+    const params = new URLSearchParams();
+
+    if (searchParams?.search) params.set('search', searchParams.search);
+    if (searchParams?.region) params.set('region', searchParams.region);
+    if (searchParams?.package_type) params.set('package_type', searchParams.package_type);
+    if (searchParams?.month) params.set('month', searchParams.month);
+    if (searchParams?.max_price) params.set('max_price', searchParams.max_price);
+
+    const response = await fetch(`${apiBaseUrl}/packages?${params.toString()}`, {
       cache: 'no-store',
     });
 
@@ -19,8 +37,8 @@ async function getPackages(): Promise<TourPackage[]> {
   }
 }
 
-export default async function PackagesPage() {
-  const packages = await getPackages();
+export default async function PackagesPage({ searchParams }: PackagesPageProps) {
+  const packages = await getPackages(searchParams);
 
   return (
     <div className="shell py-16">
@@ -34,6 +52,52 @@ export default async function PackagesPage() {
       </section>
 
       <section className="mt-10">
+        <form className="premium-card mb-8 grid gap-4 p-5 md:grid-cols-5">
+          <input
+            type="text"
+            name="search"
+            defaultValue={searchParams?.search ?? ''}
+            placeholder="Search packages"
+            className="rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
+          />
+          <input
+            type="text"
+            name="region"
+            defaultValue={searchParams?.region ?? ''}
+            placeholder="Region"
+            className="rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
+          />
+          <input
+            type="text"
+            name="package_type"
+            defaultValue={searchParams?.package_type ?? ''}
+            placeholder="Package type"
+            className="rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
+          />
+          <input
+            type="number"
+            min={1}
+            max={12}
+            name="month"
+            defaultValue={searchParams?.month ?? ''}
+            placeholder="Travel month"
+            className="rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
+          />
+          <div className="flex gap-3">
+            <input
+              type="number"
+              min={0}
+              name="max_price"
+              defaultValue={searchParams?.max_price ?? ''}
+              placeholder="Max price"
+              className="w-full rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
+            />
+            <button type="submit" className="cta-primary shrink-0 px-5">
+              Apply
+            </button>
+          </div>
+        </form>
+
         <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
           {packages.length > 0 ? (
             packages.map((travelPackage) => (

@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { apiBaseUrl } from '@/lib/api';
+import { FilterChip } from '@/components/filter-chip';
+import { GalleryStrip } from '@/components/gallery-strip';
 import { StatPill } from '@/components/stat-pill';
 import { Destination } from '@/lib/types';
 
@@ -39,7 +41,9 @@ export default async function DestinationPage({
 
   return (
     <div className="shell py-16">
-      <section className="premium-card-dark overflow-hidden px-7 py-8 md:px-10 md:py-12">
+      <section className="premium-card-dark overflow-hidden">
+        <img src={destination.cover_image_url} alt={destination.name} className="h-72 w-full object-cover opacity-75" />
+        <div className="px-7 py-8 md:px-10 md:py-12">
         <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-emerald-200">
@@ -49,7 +53,7 @@ export default async function DestinationPage({
               {destination.name}
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-slate-200">
-              {destination.description}
+              {destination.short_summary}
             </p>
           </div>
 
@@ -63,6 +67,7 @@ export default async function DestinationPage({
             />
           </div>
         </div>
+        </div>
       </section>
 
       <section className="mt-8 grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
@@ -72,10 +77,13 @@ export default async function DestinationPage({
             Why this stop belongs in your route
           </h2>
           <p className="mt-5 text-base leading-8 text-slate-700">
-            {destination.name} offers a strong mix of scenery, local texture, and pacing for
-            travelers building a more memorable Pakistan journey. Use it as a focused stay for a
-            shorter trip or combine it with nearby regions for a broader route.
+            {destination.description}
           </p>
+          <div className="mt-8 flex flex-wrap gap-2">
+            {destination.ideal_for.map((item) => (
+              <FilterChip key={item} label={item} />
+            ))}
+          </div>
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             <div className="rounded-[24px] border border-slate-200 bg-[rgba(255,255,255,0.92)] p-5">
               <p className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
@@ -107,13 +115,25 @@ export default async function DestinationPage({
           </p>
 
           <div className="mt-8 rounded-[28px] border border-slate-200 bg-[rgba(248,243,235,1)] p-6">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-slate-600">
-              Recommended use
-            </p>
-            <p className="mt-3 text-sm leading-7 text-slate-700">
-              Ideal for travelers who want a more grounded, region-led stop with a clear sense of
-              place, whether the trip focuses on culture, mountain scenery, or a balanced mix.
-            </p>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-slate-600">Highlights</p>
+            <div className="mt-4 space-y-3">
+              {destination.highlights.map((item) => (
+                <p key={item} className="rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700">
+                  {item}
+                </p>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6 rounded-[28px] border border-slate-200 bg-[rgba(248,243,235,1)] p-6">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-slate-600">Travel tips</p>
+            <div className="mt-4 space-y-3">
+              {destination.travel_tips.map((item) => (
+                <p key={item} className="rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700">
+                  {item}
+                </p>
+              ))}
+            </div>
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
@@ -123,6 +143,18 @@ export default async function DestinationPage({
             <Link href="/" className="cta-secondary">
               Back to home
             </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-8">
+        <div className="premium-card p-7 md:p-8">
+          <p className="eyebrow">Gallery</p>
+          <h2 className="mt-4 text-4xl text-slate-950 [font-family:var(--font-heading)]">
+            A visual feel for {destination.name}
+          </h2>
+          <div className="mt-6">
+            <GalleryStrip images={destination.gallery_image_urls} title={destination.name} />
           </div>
         </div>
       </section>
