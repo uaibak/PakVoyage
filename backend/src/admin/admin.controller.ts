@@ -7,8 +7,13 @@ import {
   Patch,
   Post,
   Query,
+  Req,
+  UploadedFiles,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { Request } from 'express';
 import { BookingStatus, Destination, TourPackage } from '@prisma/client';
 import {
   AdminOverview,
@@ -22,15 +27,18 @@ import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
 import { UpdateCustomTripStatusDto } from './dto/update-custom-trip-status.dto';
 import { ListPackagesAdminDto } from './dto/list-packages-admin.dto';
 import { AdminAuthGuard } from './auth/admin-auth.guard';
+import { AdminUploadService } from './admin-upload.service';
 
 interface AdminBookingResponse {
   id: string;
   full_name: string;
   email: string;
   phone: string;
+  national_id: string;
   seats: number;
   status: BookingStatus;
   total_amount: number;
+  special_requests: string | null;
   created_at: Date;
   package: {
     id: string;
@@ -45,17 +53,63 @@ interface AdminCustomRegistrationResponse {
   full_name: string;
   email: string;
   phone: string;
+  national_id: string;
   seats: number;
+  days: number;
   budget: number;
+  interests: string[];
+  trip_summary: string;
+  destinations: string[];
   estimated_total: number;
   status: BookingStatus;
+  special_requests: string | null;
   created_at: Date;
+}
+
+interface UploadResponse {
+  urls: string[];
 }
 
 @Controller('admin')
 @UseGuards(AdminAuthGuard)
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly adminUploadService: AdminUploadService,
+  ) {}
+
+  @Post('uploads')
+  @UseInterceptors(
+    FilesInterceptor('images', 12, {
+      limits: {
+        fileSize: 5 * 1024 * 1024,
+      },
+      fileFilter: (_request, file, callback) => {
+        if (!file.mimetype.startsWith('image/')) {
+          callback(new Error('Only image files can be uploaded.'), false);
+          return;
+        }
+
+        callback(null, true);
+      },
+    }),
+  )
+  async uploadImages(
+    @UploadedFiles() files: Array<{
+      buffer: Buffer;
+      mimetype: string;
+      originalname: string;
+      size: number;
+    }>,
+    @Req() request: Request,
+  ): Promise<UploadResponse> {
+    const paths = await this.adminUploadService.saveUploadedImages(files ?? []);
+    const origin = `${request.protocol}://${request.get('host')}`;
+
+    return {
+      urls: paths.map((path) => `${origin}${path}`),
+    };
+  }
 
   @Get('overview')
   async getOverview(): Promise<AdminOverview> {

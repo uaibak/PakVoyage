@@ -5,10 +5,11 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { AdminAuthController } from './auth/admin-auth.controller';
 import { AdminAuthService } from './auth/admin-auth.service';
 import { AdminAuthGuard } from './auth/admin-auth.guard';
+import { AdminUploadService } from './admin-upload.service';
 
 @Module({
   imports: [PrismaModule],
   controllers: [AdminController, AdminAuthController],
-  providers: [AdminService, AdminAuthService, AdminAuthGuard],
+  providers: [AdminService, AdminUploadService, AdminAuthService, AdminAuthGuard],
 })
 export class AdminModule {}

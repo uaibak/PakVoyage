@@ -3,6 +3,8 @@ import { SectionHeading } from '@/components/section-heading';
 import { apiBaseUrl } from '@/lib/api';
 import { TourPackage } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 interface PackagesPageProps {
   searchParams?: {
     search?: string;

@@ -6,6 +6,8 @@ import { StatPill } from '@/components/stat-pill';
 import { apiBaseUrl } from '@/lib/api';
 import { Destination, TourPackage } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 async function getDestinations(): Promise<Destination[]> {
   try {
     const response = await fetch(`${apiBaseUrl}/destinations`, {

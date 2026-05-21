@@ -35,6 +35,8 @@ PakVoyage/
 - Fixed travel packages with dates, seats, and per-seat pricing
 - Seat reservation flow for packages
 - Admin portal for operations control
+- Admin image upload support for destination and package cover/gallery images
+- Admin form helpers for dropdown fields, tag-style lists, upload previews, and filtered operations views
 - Route-level loading states
 - Backend validation and structured exception handling
 - Backend file logging to a dedicated `backend/logs` directory
@@ -82,6 +84,7 @@ API endpoints:
 - `PATCH /api/admin/bookings/:id/status`
 - `GET /api/admin/custom-registrations`
 - `PATCH /api/admin/custom-registrations/:id/status`
+- `POST /api/admin/uploads`
 - `POST /api/admin/auth/login`
 - `GET /api/admin/auth/me`
 
@@ -115,6 +118,7 @@ Backend uses [backend/.env.example](d:/Work/PakVoyage/backend/.env.example):
 ```env
 DATABASE_URL="postgresql://user:password@localhost:5432/pakvoyage_db?schema=public"
 PORT=3001
+CORS_ORIGIN=http://localhost:3000
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=admin123
 ADMIN_TOKEN_SECRET=change-this-admin-token-secret
@@ -125,6 +129,7 @@ Notes:
 - Update `DATABASE_URL` to match your PostgreSQL credentials.
 - If your password contains characters like `@`, `#`, or `:`, URL-encode them inside `DATABASE_URL`.
 - The backend runs on port `3001` by default.
+- Set `CORS_ORIGIN` to the frontend URL that should be allowed to call the backend. Multiple origins can be comma-separated.
 - Set `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and a strong random `ADMIN_TOKEN_SECRET` for admin authentication.
 
 ## Getting Started
@@ -276,11 +281,16 @@ The admin portal is available at `/admin` for operational control.
 Current capabilities:
 
 - Overview dashboard (counts and confirmed revenue)
+- Dashboard action queues for pending bookings, pending custom trips, and low-seat packages
 - Destination management (create, list, update, delete with usage checks)
+- Destination form helpers for region/best-time dropdowns, tag-style highlights/tips/ideal-for fields, and image previews
 - Confirmation dialogs for destructive actions (e.g., deleting destinations)
 - Package management (create, list active/inactive, update, archive)
-- Booking operations (list bookings, update status)
-- Custom registration operations (list registrations, update status)
+- Package form helpers for generated slugs, dropdown fields, available-seat autofill, tag-style inclusions/exclusions/itinerary fields, and image previews
+- Local image uploads for admin-managed destination and package cover/gallery images
+- Booking operations (list bookings, view contact/traveler details, update status)
+- Custom registration operations (list registrations, view trip/contact details, update status)
+- Search and status filters for admin content and operations lists
 - Seat reconciliation when bookings move to/from `CANCELLED`
 - Admin authentication with token-based protected endpoints
 
@@ -289,13 +299,34 @@ Admin implementation references:
 - [backend/src/admin/admin.module.ts](d:/Work/PakVoyage/backend/src/admin/admin.module.ts)
 - [backend/src/admin/admin.controller.ts](d:/Work/PakVoyage/backend/src/admin/admin.controller.ts)
 - [backend/src/admin/admin.service.ts](d:/Work/PakVoyage/backend/src/admin/admin.service.ts)
+- [backend/src/admin/admin-upload.service.ts](d:/Work/PakVoyage/backend/src/admin/admin-upload.service.ts)
 - [backend/src/admin/auth/admin-auth.controller.ts](d:/Work/PakVoyage/backend/src/admin/auth/admin-auth.controller.ts)
 - [backend/src/admin/auth/admin-auth.service.ts](d:/Work/PakVoyage/backend/src/admin/auth/admin-auth.service.ts)
 - [backend/src/admin/auth/admin-auth.guard.ts](d:/Work/PakVoyage/backend/src/admin/auth/admin-auth.guard.ts)
 - [frontend/app/admin/page.tsx](d:/Work/PakVoyage/frontend/app/admin/page.tsx)
 - [frontend/app/admin/login/page.tsx](d:/Work/PakVoyage/frontend/app/admin/login/page.tsx)
 - [frontend/components/admin-portal.tsx](d:/Work/PakVoyage/frontend/components/admin-portal.tsx)
+- [frontend/components/admin/admin-dashboard.tsx](d:/Work/PakVoyage/frontend/components/admin/admin-dashboard.tsx)
+- [frontend/components/admin/admin-form-controls.tsx](d:/Work/PakVoyage/frontend/components/admin/admin-form-controls.tsx)
+- [frontend/components/admin/admin-operations.tsx](d:/Work/PakVoyage/frontend/components/admin/admin-operations.tsx)
 - [frontend/components/admin-login-form.tsx](d:/Work/PakVoyage/frontend/components/admin-login-form.tsx)
+- [frontend/lib/admin-api.ts](d:/Work/PakVoyage/frontend/lib/admin-api.ts)
+
+## Admin Image Uploads
+
+Admins can either paste image URLs or upload local image files when managing destinations and packages.
+
+Upload behavior:
+
+1. The frontend sends selected files to `POST /api/admin/uploads`
+2. The backend stores files under [backend/uploads](d:/Work/PakVoyage/backend/uploads)
+3. The backend serves uploaded files from `/uploads/...`
+4. The returned URLs are saved into existing `cover_image_url` and `gallery_image_urls` fields
+
+Notes:
+
+- Uploaded files are ignored by git; [backend/uploads/.gitkeep](d:/Work/PakVoyage/backend/uploads/.gitkeep) keeps the directory present.
+- Local upload storage is intended for development. Production deployments should use durable object storage such as S3, Cloudinary, or Supabase Storage.
 
 ## How Package Booking Works
 
@@ -353,8 +384,8 @@ The frontend includes:
 
 The frontend and backend have both been built successfully during implementation:
 
-- frontend: `npm.cmd run build`
-- backend: `npm.cmd run build`
+- frontend: `npm run build`
+- backend: `npm run build`
 
 ## Known Notes
 
@@ -365,6 +396,8 @@ The frontend and backend have both been built successfully during implementation
 - Saved itineraries exist in the database even without a linked user.
 - Package bookings are created with `PENDING` status by default.
 - Custom itinerary registrations are also created with `PENDING` status by default.
+- Public API-backed pages are rendered dynamically so frontend builds do not require the backend to be running.
+- Admin uploads are stored locally for development and are not committed to git.
 - If Next.js shows stale chunk or `_document` module errors, delete [frontend/.next](d:/Work/PakVoyage/frontend/.next) and restart the frontend dev server.
 - If the frontend still behaves as if old code is running, stop all `node.exe` processes, then restart backend and frontend.
 

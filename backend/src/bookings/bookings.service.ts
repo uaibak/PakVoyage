@@ -24,14 +24,25 @@ export class BookingsService {
         );
       }
 
-      await tx.tourPackage.update({
-        where: { id: travelPackage.id },
+      const seatUpdate = await tx.tourPackage.updateMany({
+        where: {
+          id: travelPackage.id,
+          available_seats: {
+            gte: dto.seats,
+          },
+        },
         data: {
           available_seats: {
             decrement: dto.seats,
           },
         },
       });
+
+      if (seatUpdate.count === 0) {
+        throw new BadRequestException(
+          'Not enough seats are currently available for this package.',
+        );
+      }
 
       const booking = await tx.booking.create({
         data: {

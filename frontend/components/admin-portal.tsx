@@ -2,14 +2,30 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiBaseUrl } from '@/lib/api';
-import { parseApiError } from '@/lib/api-error';
 import {
-  adminFetch,
+  csvToArray,
+  ImageUploadField,
+  ImageUrlPreview,
+  OptionSelect,
+  TagEditor,
+} from '@/components/admin/admin-form-controls';
+import { AdminDashboard } from '@/components/admin/admin-dashboard';
+import { AdminOperations, OpsTab } from '@/components/admin/admin-operations';
+import {
   clearAdminToken,
-  getAdminProfile,
   getAdminToken,
 } from '@/lib/admin-auth';
+import {
+  createAdminDestination,
+  createAdminPackage,
+  deleteAdminDestination,
+  fetchAdminData,
+  updateAdminBookingStatus,
+  updateAdminCustomRegistrationStatus,
+  updateAdminDestination,
+  updateAdminPackage,
+  uploadAdminImages,
+} from '@/lib/admin-api';
 import {
   AdminBooking,
   AdminCustomRegistration,
@@ -21,7 +37,6 @@ import { BookingStatus } from '@/lib/types';
 
 type Section = 'overview' | 'content' | 'operations';
 type ContentTab = 'destinations' | 'packages';
-type OpsTab = 'bookings' | 'custom';
 
 type DestinationFormState = {
   name: string;
@@ -62,12 +77,60 @@ type PackageFormState = {
 };
 
 const statuses: BookingStatus[] = ['PENDING', 'CONFIRMED', 'CANCELLED'];
+const regionOptions = [
+  'Gilgit-Baltistan',
+  'Khyber Pakhtunkhwa',
+  'Punjab',
+  'Sindh',
+  'Balochistan',
+  'Azad Kashmir',
+  'Islamabad Capital Territory',
+];
+const bestTimeOptions = ['Spring', 'Summer', 'Autumn', 'Winter', 'All year'];
+const packageTypeOptions = [
+  'Adventure',
+  'Family',
+  'Group Tour',
+  'Honeymoon',
+  'Luxury',
+  'Budget',
+  'Weekend',
+];
+const stayStyleOptions = ['Hotel', 'Guest House', 'Resort', 'Camp', 'Mixed'];
+const difficultyOptions = ['Easy', 'Moderate', 'Challenging'];
+const idealForOptions = [
+  'Families',
+  'Couples',
+  'Friends',
+  'Solo travelers',
+  'Photographers',
+  'Food lovers',
+  'Culture lovers',
+  'Adventure seekers',
+];
+const inclusionPresets = [
+  'Hotel stay',
+  'Daily breakfast',
+  'Private transport',
+  'Tour guide',
+  'Toll taxes',
+  'Basic first aid',
+];
+const exclusionPresets = [
+  'Personal expenses',
+  'Entry tickets',
+  'Lunch and dinner',
+  'Porter charges',
+  'Travel insurance',
+  'Anything not mentioned in inclusions',
+];
 
-function csvToArray(value: string): string[] {
+function slugify(value: string): string {
   return value
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 function buildDestinationForm(): DestinationFormState {
@@ -155,27 +218,128 @@ function toPackageForm(pkg: AdminPackage): PackageFormState {
 }
 
 function destinationPayload(form: DestinationFormState) {
+  const highlights = csvToArray(form.highlights);
+  const travelTips = csvToArray(form.travel_tips);
+  const idealFor = csvToArray(form.ideal_for);
+
+  if (highlights.length === 0) {
+    throw new Error('Add at least one destination highlight.');
+  }
+
+  if (travelTips.length === 0) {
+    throw new Error('Add at least one travel tip.');
+  }
+
+  if (idealFor.length === 0) {
+    throw new Error('Add at least one ideal traveler type.');
+  }
+
   return {
     ...form,
     avg_cost_per_day: Number(form.avg_cost_per_day),
-    highlights: csvToArray(form.highlights),
-    travel_tips: csvToArray(form.travel_tips),
-    ideal_for: csvToArray(form.ideal_for),
+    highlights,
+    travel_tips: travelTips,
+    ideal_for: idealFor,
     gallery_image_urls: csvToArray(form.gallery_image_urls),
   };
 }
 
 function packagePayload(form: PackageFormState) {
+  const destinations = csvToArray(form.destinations);
+  const inclusions = csvToArray(form.inclusions);
+  const exclusions = csvToArray(form.exclusions);
+  const itineraryOverview = csvToArray(form.itinerary_overview);
+
+  if (destinations.length === 0) {
+    throw new Error('Add at least one package destination.');
+  }
+
+  if (inclusions.length === 0) {
+    throw new Error('Add at least one package inclusion.');
+  }
+
+  if (exclusions.length === 0) {
+    throw new Error('Add at least one package exclusion.');
+  }
+
+  if (itineraryOverview.length === 0) {
+    throw new Error('Add at least one itinerary overview item.');
+  }
+
   return {
     ...form,
     duration_days: Number(form.duration_days),
     price_per_seat: Number(form.price_per_seat),
     total_seats: Number(form.total_seats),
     available_seats: Number(form.available_seats),
-    destinations: csvToArray(form.destinations),
-    inclusions: csvToArray(form.inclusions),
-    exclusions: csvToArray(form.exclusions),
-    itinerary_overview: csvToArray(form.itinerary_overview),
+    destinations,
+    inclusions,
+    exclusions,
+    itinerary_overview: itineraryOverview,
+  };
+}
+
+async function uploadImages(files: File[]): Promise<string[]> {
+  return uploadAdminImages(files);
+}
+
+async function destinationPayloadWithImages(
+  form: DestinationFormState,
+  coverFile: File | null,
+  galleryFiles: File[],
+) {
+  const [coverUploads, galleryUploads] = await Promise.all([
+    uploadImages(coverFile ? [coverFile] : []),
+    uploadImages(galleryFiles),
+  ]);
+  const coverImageUrl = coverUploads[0] ?? form.cover_image_url.trim();
+  const galleryImageUrls = [
+    ...csvToArray(form.gallery_image_urls),
+    ...galleryUploads,
+  ];
+
+  if (!coverImageUrl) {
+    throw new Error('Add a cover image URL or upload a cover image.');
+  }
+
+  if (galleryImageUrls.length === 0) {
+    throw new Error('Add at least one gallery image URL or upload gallery images.');
+  }
+
+  return {
+    ...destinationPayload(form),
+    cover_image_url: coverImageUrl,
+    gallery_image_urls: galleryImageUrls,
+  };
+}
+
+async function packagePayloadWithImages(
+  form: PackageFormState,
+  coverFile: File | null,
+  galleryFiles: File[],
+) {
+  const [coverUploads, galleryUploads] = await Promise.all([
+    uploadImages(coverFile ? [coverFile] : []),
+    uploadImages(galleryFiles),
+  ]);
+  const coverImageUrl = coverUploads[0] ?? form.cover_image_url.trim();
+  const galleryImageUrls = [
+    ...csvToArray(form.gallery_image_urls),
+    ...galleryUploads,
+  ];
+
+  if (!coverImageUrl) {
+    throw new Error('Add a cover image URL or upload a cover image.');
+  }
+
+  if (galleryImageUrls.length === 0) {
+    throw new Error('Add at least one gallery image URL or upload gallery images.');
+  }
+
+  return {
+    ...packagePayload(form),
+    cover_image_url: coverImageUrl,
+    gallery_image_urls: galleryImageUrls,
   };
 }
 
@@ -193,6 +357,9 @@ export function AdminPortal() {
   const [showPackageForm, setShowPackageForm] = useState<boolean>(false);
   const [editingDestinationId, setEditingDestinationId] = useState<string>('');
   const [editingPackageId, setEditingPackageId] = useState<string>('');
+  const [contentSearch, setContentSearch] = useState<string>('');
+  const [packageStatusFilter, setPackageStatusFilter] = useState<string>('all');
+  const [opsStatusFilter, setOpsStatusFilter] = useState<string>('all');
 
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [destinations, setDestinations] = useState<AdminDestination[]>([]);
@@ -204,6 +371,10 @@ export function AdminPortal() {
     buildDestinationForm(),
   );
   const [packageForm, setPackageForm] = useState<PackageFormState>(buildPackageForm());
+  const [destinationCoverFile, setDestinationCoverFile] = useState<File | null>(null);
+  const [destinationGalleryFiles, setDestinationGalleryFiles] = useState<File[]>([]);
+  const [packageCoverFile, setPackageCoverFile] = useState<File | null>(null);
+  const [packageGalleryFiles, setPackageGalleryFiles] = useState<File[]>([]);
 
   useEffect(() => {
     const run = async (): Promise<void> => {
@@ -221,25 +392,13 @@ export function AdminPortal() {
     setError('');
     // We don't clear success here so it can persist for a few seconds if set by an action
     try {
-      const profile = await getAdminProfile();
-      setAdminUsername(profile.username);
-      const [o, d, p, b, c] = await Promise.all([
-        adminFetch(`${apiBaseUrl}/admin/overview`, { cache: 'no-store' }),
-        adminFetch(`${apiBaseUrl}/admin/destinations`, { cache: 'no-store' }),
-        adminFetch(`${apiBaseUrl}/admin/packages?include_inactive=true`, { cache: 'no-store' }),
-        adminFetch(`${apiBaseUrl}/admin/bookings`, { cache: 'no-store' }),
-        adminFetch(`${apiBaseUrl}/admin/custom-registrations`, { cache: 'no-store' }),
-      ]);
-      if (!o.ok) throw await parseApiError(o);
-      if (!d.ok) throw await parseApiError(d);
-      if (!p.ok) throw await parseApiError(p);
-      if (!b.ok) throw await parseApiError(b);
-      if (!c.ok) throw await parseApiError(c);
-      setOverview((await o.json()) as AdminOverview);
-      setDestinations((await d.json()) as AdminDestination[]);
-      setPackages((await p.json()) as AdminPackage[]);
-      setBookings((await b.json()) as AdminBooking[]);
-      setCustomRegistrations((await c.json()) as AdminCustomRegistration[]);
+      const data = await fetchAdminData();
+      setAdminUsername(data.profile.username);
+      setOverview(data.overview);
+      setDestinations(data.destinations);
+      setPackages(data.packages);
+      setBookings(data.bookings);
+      setCustomRegistrations(data.customRegistrations);
     } catch (requestError) {
       const message =
         requestError instanceof Error ? requestError.message : 'Failed to load admin data.';
@@ -260,13 +419,15 @@ export function AdminPortal() {
     setError('');
     setSuccess('');
     try {
-      const response = await adminFetch(`${apiBaseUrl}/admin/destinations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(destinationPayload(destinationForm)),
-      });
-      if (!response.ok) throw await parseApiError(response);
+      const payload = await destinationPayloadWithImages(
+        destinationForm,
+        destinationCoverFile,
+        destinationGalleryFiles,
+      );
+      await createAdminDestination(payload);
       setDestinationForm(buildDestinationForm());
+      setDestinationCoverFile(null);
+      setDestinationGalleryFiles([]);
       setShowDestinationForm(false);
       setSuccess('Destination created successfully.');
       await refreshAll(false);
@@ -286,14 +447,16 @@ export function AdminPortal() {
     setError('');
     setSuccess('');
     try {
-      const response = await adminFetch(`${apiBaseUrl}/admin/destinations/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(destinationPayload(destinationForm)),
-      });
-      if (!response.ok) throw await parseApiError(response);
+      const payload = await destinationPayloadWithImages(
+        destinationForm,
+        destinationCoverFile,
+        destinationGalleryFiles,
+      );
+      await updateAdminDestination(id, payload);
       setEditingDestinationId('');
       setDestinationForm(buildDestinationForm());
+      setDestinationCoverFile(null);
+      setDestinationGalleryFiles([]);
       setSuccess('Destination updated successfully.');
       await refreshAll(false);
     } catch (requestError) {
@@ -309,16 +472,18 @@ export function AdminPortal() {
     setError('');
     setSuccess('');
     try {
-      const response = await adminFetch(`${apiBaseUrl}/admin/packages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...packagePayload(packageForm),
-          is_active: true,
-        }),
+      const payload = await packagePayloadWithImages(
+        packageForm,
+        packageCoverFile,
+        packageGalleryFiles,
+      );
+      await createAdminPackage({
+        ...payload,
+        is_active: true,
       });
-      if (!response.ok) throw await parseApiError(response);
       setPackageForm(buildPackageForm());
+      setPackageCoverFile(null);
+      setPackageGalleryFiles([]);
       setShowPackageForm(false);
       setSuccess('Tour package created successfully.');
       await refreshAll(false);
@@ -338,14 +503,16 @@ export function AdminPortal() {
     setError('');
     setSuccess('');
     try {
-      const response = await adminFetch(`${apiBaseUrl}/admin/packages/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(packagePayload(packageForm)),
-      });
-      if (!response.ok) throw await parseApiError(response);
+      const payload = await packagePayloadWithImages(
+        packageForm,
+        packageCoverFile,
+        packageGalleryFiles,
+      );
+      await updateAdminPackage(id, payload);
       setEditingPackageId('');
       setPackageForm(buildPackageForm());
+      setPackageCoverFile(null);
+      setPackageGalleryFiles([]);
       setSuccess('Tour package updated successfully.');
       await refreshAll(false);
     } catch (requestError) {
@@ -360,12 +527,7 @@ export function AdminPortal() {
     setError('');
     setSuccess('');
     try {
-      const response = await adminFetch(`${apiBaseUrl}/admin/bookings/${id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      if (!response.ok) throw await parseApiError(response);
+      await updateAdminBookingStatus(id, status);
       setSuccess(`Booking ${id} updated to ${status}.`);
       await refreshAll(false);
     } catch (requestError) {
@@ -380,12 +542,7 @@ export function AdminPortal() {
     setError('');
     setSuccess('');
     try {
-      const response = await adminFetch(`${apiBaseUrl}/admin/custom-registrations/${id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      if (!response.ok) throw await parseApiError(response);
+      await updateAdminCustomRegistrationStatus(id, status);
       setSuccess(`Registration ${id} updated to ${status}.`);
       await refreshAll(false);
     } catch (requestError) {
@@ -400,12 +557,7 @@ export function AdminPortal() {
     setError('');
     setSuccess('');
     try {
-      const response = await adminFetch(`${apiBaseUrl}/admin/packages/${pkg.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(patch),
-      });
-      if (!response.ok) throw await parseApiError(response);
+      await updateAdminPackage(pkg.id, patch);
       setSuccess(`Package "${pkg.title}" visibility updated.`);
       await refreshAll(false);
     } catch (requestError) {
@@ -422,10 +574,7 @@ export function AdminPortal() {
     setError('');
     setSuccess('');
     try {
-      const response = await adminFetch(`${apiBaseUrl}/admin/destinations/${id}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) throw await parseApiError(response);
+      await deleteAdminDestination(id);
       setSuccess('Destination deleted successfully.');
       await refreshAll(false);
     } catch (requestError) {
@@ -443,6 +592,44 @@ export function AdminPortal() {
         { label: 'Pending custom', value: overview.pending_custom_registrations_count },
       ]
     : [];
+  const filteredDestinations = destinations.filter((destination) => {
+    const query = contentSearch.toLowerCase().trim();
+    if (!query) return true;
+    return [destination.name, destination.region, destination.short_summary]
+      .join(' ')
+      .toLowerCase()
+      .includes(query);
+  });
+  const filteredPackages = packages.filter((pkg) => {
+    const query = contentSearch.toLowerCase().trim();
+    const matchesQuery =
+      !query ||
+      [pkg.title, pkg.region, pkg.summary, pkg.package_type]
+        .join(' ')
+        .toLowerCase()
+        .includes(query);
+    const matchesStatus =
+      packageStatusFilter === 'all' ||
+      (packageStatusFilter === 'active' && pkg.is_active) ||
+      (packageStatusFilter === 'inactive' && !pkg.is_active);
+
+    return matchesQuery && matchesStatus;
+  });
+  const filteredBookings = bookings.filter(
+    (item) => opsStatusFilter === 'all' || item.status === opsStatusFilter,
+  );
+  const filteredCustomRegistrations = customRegistrations.filter(
+    (item) => opsStatusFilter === 'all' || item.status === opsStatusFilter,
+  );
+  const pendingBookings = bookings
+    .filter((item) => item.status === 'PENDING')
+    .slice(0, 4);
+  const pendingCustomTrips = customRegistrations
+    .filter((item) => item.status === 'PENDING')
+    .slice(0, 4);
+  const lowSeatPackages = packages
+    .filter((pkg) => pkg.is_active && pkg.available_seats <= 3)
+    .slice(0, 4);
 
   return (
     <div className="space-y-6">
@@ -503,33 +690,29 @@ export function AdminPortal() {
           {error}
         </p>
       ) : null}
+      {success ? (
+        <p className="rounded-[18px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          {success}
+        </p>
+      ) : null}
       {loading ? (
         <div className="premium-card p-6 text-sm text-slate-600">Loading admin data...</div>
       ) : null}
 
       {!loading && section === 'overview' ? (
-        <div className="space-y-4">
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {summary.map((item) => (
-              <article key={item.label} className="premium-card px-5 py-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{item.label}</p>
-                <p className="mt-2 text-2xl font-semibold text-slate-950">{item.value}</p>
-              </article>
-            ))}
-          </section>
-          <section className="premium-card p-6">
-            <p className="eyebrow">Confirmed revenue</p>
-            <p className="mt-2 text-3xl text-slate-950 [font-family:var(--font-heading)]">
-              PKR {(overview?.confirmed_revenue ?? 0).toLocaleString()}
-            </p>
-          </section>
-        </div>
+        <AdminDashboard
+          overview={overview}
+          summary={summary}
+          pendingBookings={pendingBookings}
+          pendingCustomTrips={pendingCustomTrips}
+          lowSeatPackages={lowSeatPackages}
+        />
       ) : null}
 
       {!loading && section === 'content' ? (
         <div className="space-y-4">
           <section className="premium-card p-4">
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => setContentTab('destinations')}
@@ -552,6 +735,24 @@ export function AdminPortal() {
               >
                 Packages
               </button>
+              <input
+                type="search"
+                placeholder="Search admin content"
+                value={contentSearch}
+                onChange={(event) => setContentSearch(event.target.value)}
+                className="ml-auto min-w-[220px] rounded-full border border-slate-200 bg-white px-4 py-2 text-sm outline-none"
+              />
+              {contentTab === 'packages' ? (
+                <select
+                  value={packageStatusFilter}
+                  onChange={(event) => setPackageStatusFilter(event.target.value)}
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm outline-none"
+                >
+                  <option value="all">All packages</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              ) : null}
             </div>
           </section>
 
@@ -566,6 +767,8 @@ export function AdminPortal() {
                   onClick={() => {
                     setEditingDestinationId('');
                     setDestinationForm(buildDestinationForm());
+                    setDestinationCoverFile(null);
+                    setDestinationGalleryFiles([]);
                     setShowDestinationForm((current) => !current);
                   }}
                   className="cta-primary"
@@ -574,25 +777,29 @@ export function AdminPortal() {
                 </button>
               </div>
               {showDestinationForm ? (
-                <form onSubmit={createDestination} className="grid gap-3">
+                <form noValidate onSubmit={createDestination} className="grid gap-3">
                   <div className="grid gap-3 md:grid-cols-2">
                     <input required placeholder="Name" value={destinationForm.name} onChange={(e) => setDestinationForm((p) => ({ ...p, name: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                    <input required placeholder="Region" value={destinationForm.region} onChange={(e) => setDestinationForm((p) => ({ ...p, region: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                    <input required placeholder="Best time" value={destinationForm.best_time} onChange={(e) => setDestinationForm((p) => ({ ...p, best_time: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
+                    <OptionSelect value={destinationForm.region} options={regionOptions} placeholder="Region" onChange={(value) => setDestinationForm((p) => ({ ...p, region: value }))} />
+                    <OptionSelect value={destinationForm.best_time} options={bestTimeOptions} placeholder="Best time" onChange={(value) => setDestinationForm((p) => ({ ...p, best_time: value }))} />
                     <input required type="number" min={0} placeholder="Average cost per day" value={destinationForm.avg_cost_per_day} onChange={(e) => setDestinationForm((p) => ({ ...p, avg_cost_per_day: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
                     <input required placeholder="Short summary" value={destinationForm.short_summary} onChange={(e) => setDestinationForm((p) => ({ ...p, short_summary: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none md:col-span-2" />
-                    <input required placeholder="Cover image URL" value={destinationForm.cover_image_url} onChange={(e) => setDestinationForm((p) => ({ ...p, cover_image_url: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none md:col-span-2" />
+                    <input required={!destinationCoverFile} placeholder="Cover image URL" value={destinationForm.cover_image_url} onChange={(e) => setDestinationForm((p) => ({ ...p, cover_image_url: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none md:col-span-2" />
                   </div>
+                  <ImageUrlPreview urls={destinationForm.cover_image_url.trim() ? [destinationForm.cover_image_url.trim()] : []} />
+                  <ImageUploadField files={destinationCoverFile ? [destinationCoverFile] : []} onChange={(files) => setDestinationCoverFile(files[0] ?? null)} />
                   <textarea required rows={3} placeholder="Description" value={destinationForm.description} onChange={(e) => setDestinationForm((p) => ({ ...p, description: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                  <input required placeholder="Highlights (comma separated)" value={destinationForm.highlights} onChange={(e) => setDestinationForm((p) => ({ ...p, highlights: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                  <input required placeholder="Travel tips (comma separated)" value={destinationForm.travel_tips} onChange={(e) => setDestinationForm((p) => ({ ...p, travel_tips: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                  <input required placeholder="Ideal for (comma separated)" value={destinationForm.ideal_for} onChange={(e) => setDestinationForm((p) => ({ ...p, ideal_for: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                  <input required placeholder="Gallery image URLs (comma separated)" value={destinationForm.gallery_image_urls} onChange={(e) => setDestinationForm((p) => ({ ...p, gallery_image_urls: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
+                  <TagEditor placeholder="Add highlight" value={destinationForm.highlights} onChange={(value) => setDestinationForm((p) => ({ ...p, highlights: value }))} />
+                  <TagEditor placeholder="Add travel tip" value={destinationForm.travel_tips} onChange={(value) => setDestinationForm((p) => ({ ...p, travel_tips: value }))} />
+                  <TagEditor placeholder="Add ideal traveler" value={destinationForm.ideal_for} presets={idealForOptions} onChange={(value) => setDestinationForm((p) => ({ ...p, ideal_for: value }))} />
+                  <input required={destinationGalleryFiles.length === 0} placeholder="Gallery image URLs (comma separated)" value={destinationForm.gallery_image_urls} onChange={(e) => setDestinationForm((p) => ({ ...p, gallery_image_urls: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
+                  <ImageUrlPreview urls={csvToArray(destinationForm.gallery_image_urls)} />
+                  <ImageUploadField multiple files={destinationGalleryFiles} onChange={setDestinationGalleryFiles} />
                   <button type="submit" disabled={busyId === 'create-destination'} className="cta-primary w-full justify-center">{busyId === 'create-destination' ? 'Creating...' : 'Create destination'}</button>
                 </form>
               ) : null}
               <div className="space-y-3">
-                {destinations.map((destination) => (
+                {filteredDestinations.map((destination) => (
                   <article key={destination.id} className="rounded-[16px] border border-slate-200 bg-white p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="flex gap-4">
@@ -604,20 +811,29 @@ export function AdminPortal() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <button type="button" className="cta-secondary px-4 py-2" onClick={() => { setEditingDestinationId(destination.id); setShowDestinationForm(false); setDestinationForm(toDestinationForm(destination)); }}>Edit</button>
+                        <button type="button" className="cta-secondary px-4 py-2" onClick={() => { setEditingDestinationId(destination.id); setShowDestinationForm(false); setDestinationForm(toDestinationForm(destination)); setDestinationCoverFile(null); setDestinationGalleryFiles([]); }}>Edit</button>
                         <button type="button" disabled={busyId === destination.id} className="cta-secondary px-4 py-2" onClick={() => void deleteDestination(destination.id)}>Delete</button>
                       </div>
                     </div>
                     {editingDestinationId === destination.id ? (
-                      <form onSubmit={(event) => void updateDestination(event, destination.id)} className="mt-4 grid gap-3 border-t border-slate-200 pt-4">
+                      <form noValidate onSubmit={(event) => void updateDestination(event, destination.id)} className="mt-4 grid gap-3 border-t border-slate-200 pt-4">
                         <input required placeholder="Name" value={destinationForm.name} onChange={(e) => setDestinationForm((p) => ({ ...p, name: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
+                        <OptionSelect value={destinationForm.region} options={regionOptions} placeholder="Region" onChange={(value) => setDestinationForm((p) => ({ ...p, region: value }))} />
+                        <OptionSelect value={destinationForm.best_time} options={bestTimeOptions} placeholder="Best time" onChange={(value) => setDestinationForm((p) => ({ ...p, best_time: value }))} />
                         <input required placeholder="Short summary" value={destinationForm.short_summary} onChange={(e) => setDestinationForm((p) => ({ ...p, short_summary: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
                         <textarea required rows={3} placeholder="Description" value={destinationForm.description} onChange={(e) => setDestinationForm((p) => ({ ...p, description: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                        <input required placeholder="Cover image URL" value={destinationForm.cover_image_url} onChange={(e) => setDestinationForm((p) => ({ ...p, cover_image_url: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                        <input required placeholder="Gallery image URLs (comma separated)" value={destinationForm.gallery_image_urls} onChange={(e) => setDestinationForm((p) => ({ ...p, gallery_image_urls: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
+                        <input required={!destinationCoverFile} placeholder="Cover image URL" value={destinationForm.cover_image_url} onChange={(e) => setDestinationForm((p) => ({ ...p, cover_image_url: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
+                        <ImageUrlPreview urls={destinationForm.cover_image_url.trim() ? [destinationForm.cover_image_url.trim()] : []} />
+                        <ImageUploadField files={destinationCoverFile ? [destinationCoverFile] : []} onChange={(files) => setDestinationCoverFile(files[0] ?? null)} />
+                        <TagEditor placeholder="Add highlight" value={destinationForm.highlights} onChange={(value) => setDestinationForm((p) => ({ ...p, highlights: value }))} />
+                        <TagEditor placeholder="Add travel tip" value={destinationForm.travel_tips} onChange={(value) => setDestinationForm((p) => ({ ...p, travel_tips: value }))} />
+                        <TagEditor placeholder="Add ideal traveler" value={destinationForm.ideal_for} presets={idealForOptions} onChange={(value) => setDestinationForm((p) => ({ ...p, ideal_for: value }))} />
+                        <input required={destinationGalleryFiles.length === 0} placeholder="Gallery image URLs (comma separated)" value={destinationForm.gallery_image_urls} onChange={(e) => setDestinationForm((p) => ({ ...p, gallery_image_urls: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
+                        <ImageUrlPreview urls={csvToArray(destinationForm.gallery_image_urls)} />
+                        <ImageUploadField multiple files={destinationGalleryFiles} onChange={setDestinationGalleryFiles} />
                         <div className="flex gap-3">
                           <button type="submit" disabled={busyId === destination.id} className="cta-primary">{busyId === destination.id ? 'Saving...' : 'Save changes'}</button>
-                          <button type="button" className="cta-secondary" onClick={() => { setEditingDestinationId(''); setDestinationForm(buildDestinationForm()); }}>Cancel</button>
+                          <button type="button" className="cta-secondary" onClick={() => { setEditingDestinationId(''); setDestinationForm(buildDestinationForm()); setDestinationCoverFile(null); setDestinationGalleryFiles([]); }}>Cancel</button>
                         </div>
                       </form>
                     ) : null}
@@ -638,6 +854,8 @@ export function AdminPortal() {
                   onClick={() => {
                     setEditingPackageId('');
                     setPackageForm(buildPackageForm());
+                    setPackageCoverFile(null);
+                    setPackageGalleryFiles([]);
                     setShowPackageForm((current) => !current);
                   }}
                   className="cta-primary"
@@ -646,27 +864,38 @@ export function AdminPortal() {
                 </button>
               </div>
               {showPackageForm ? (
-                <form onSubmit={createPackage} className="grid gap-3">
+                <form noValidate onSubmit={createPackage} className="grid gap-3">
                   <div className="grid gap-3 md:grid-cols-2">
-                    <input required placeholder="Title" value={packageForm.title} onChange={(e) => setPackageForm((p) => ({ ...p, title: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
+                    <input required placeholder="Title" value={packageForm.title} onChange={(e) => {
+                      const title = e.target.value;
+                      setPackageForm((p) => ({
+                        ...p,
+                        title,
+                        slug: !p.slug || p.slug === slugify(p.title) ? slugify(title) : p.slug,
+                      }));
+                    }} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
                     <input required placeholder="Slug" value={packageForm.slug} onChange={(e) => setPackageForm((p) => ({ ...p, slug: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                    <input required placeholder="Region" value={packageForm.region} onChange={(e) => setPackageForm((p) => ({ ...p, region: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
+                    <OptionSelect value={packageForm.region} options={regionOptions} placeholder="Region" onChange={(value) => setPackageForm((p) => ({ ...p, region: value }))} />
                     <input required type="date" value={packageForm.travel_date} onChange={(e) => setPackageForm((p) => ({ ...p, travel_date: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
                     <input required type="number" min={1} placeholder="Duration days" value={packageForm.duration_days} onChange={(e) => setPackageForm((p) => ({ ...p, duration_days: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
                     <input required type="number" min={0} placeholder="Price per seat" value={packageForm.price_per_seat} onChange={(e) => setPackageForm((p) => ({ ...p, price_per_seat: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                    <input required type="number" min={1} placeholder="Total seats" value={packageForm.total_seats} onChange={(e) => setPackageForm((p) => ({ ...p, total_seats: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                    <input required type="number" min={0} placeholder="Available seats" value={packageForm.available_seats} onChange={(e) => setPackageForm((p) => ({ ...p, available_seats: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
+                    <input required type="number" min={1} placeholder="Total seats" value={packageForm.total_seats} onChange={(e) => setPackageForm((p) => ({ ...p, total_seats: e.target.value, available_seats: p.available_seats || e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
+                    <input required type="number" min={0} placeholder="Available seats" value={packageForm.available_seats} onChange={(e) => setPackageForm((p) => ({ ...p, available_seats: e.target.value }))} className="rounded-[14px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none" />
                     <input required placeholder="Pickup city" value={packageForm.pickup_city} onChange={(e) => setPackageForm((p) => ({ ...p, pickup_city: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                    <input required placeholder="Package type" value={packageForm.package_type} onChange={(e) => setPackageForm((p) => ({ ...p, package_type: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                    <input required placeholder="Stay style" value={packageForm.stay_style} onChange={(e) => setPackageForm((p) => ({ ...p, stay_style: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                    <input required placeholder="Difficulty level" value={packageForm.difficulty_level} onChange={(e) => setPackageForm((p) => ({ ...p, difficulty_level: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                    <input required placeholder="Cover image URL" value={packageForm.cover_image_url} onChange={(e) => setPackageForm((p) => ({ ...p, cover_image_url: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none md:col-span-2" />
+                    <OptionSelect value={packageForm.package_type} options={packageTypeOptions} placeholder="Package type" onChange={(value) => setPackageForm((p) => ({ ...p, package_type: value }))} />
+                    <OptionSelect value={packageForm.stay_style} options={stayStyleOptions} placeholder="Stay style" onChange={(value) => setPackageForm((p) => ({ ...p, stay_style: value }))} />
+                    <OptionSelect value={packageForm.difficulty_level} options={difficultyOptions} placeholder="Difficulty level" onChange={(value) => setPackageForm((p) => ({ ...p, difficulty_level: value }))} />
+                    <input required={!packageCoverFile} placeholder="Cover image URL" value={packageForm.cover_image_url} onChange={(e) => setPackageForm((p) => ({ ...p, cover_image_url: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none md:col-span-2" />
                   </div>
-                  <input required placeholder="Destinations (comma separated)" value={packageForm.destinations} onChange={(e) => setPackageForm((p) => ({ ...p, destinations: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                  <input required placeholder="Inclusions (comma separated)" value={packageForm.inclusions} onChange={(e) => setPackageForm((p) => ({ ...p, inclusions: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                  <input required placeholder="Exclusions (comma separated)" value={packageForm.exclusions} onChange={(e) => setPackageForm((p) => ({ ...p, exclusions: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                  <input required placeholder="Itinerary overview (comma separated)" value={packageForm.itinerary_overview} onChange={(e) => setPackageForm((p) => ({ ...p, itinerary_overview: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                  <input required placeholder="Gallery image URLs (comma separated)" value={packageForm.gallery_image_urls} onChange={(e) => setPackageForm((p) => ({ ...p, gallery_image_urls: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
+                  <ImageUrlPreview urls={packageForm.cover_image_url.trim() ? [packageForm.cover_image_url.trim()] : []} />
+                  <ImageUploadField files={packageCoverFile ? [packageCoverFile] : []} onChange={(files) => setPackageCoverFile(files[0] ?? null)} />
+                  <TagEditor placeholder="Add destination stop" value={packageForm.destinations} onChange={(value) => setPackageForm((p) => ({ ...p, destinations: value }))} />
+                  <TagEditor placeholder="Add inclusion" value={packageForm.inclusions} presets={inclusionPresets} onChange={(value) => setPackageForm((p) => ({ ...p, inclusions: value }))} />
+                  <TagEditor placeholder="Add exclusion" value={packageForm.exclusions} presets={exclusionPresets} onChange={(value) => setPackageForm((p) => ({ ...p, exclusions: value }))} />
+                  <TagEditor placeholder="Add itinerary day/step" value={packageForm.itinerary_overview} onChange={(value) => setPackageForm((p) => ({ ...p, itinerary_overview: value }))} />
+                  <input required={packageGalleryFiles.length === 0} placeholder="Gallery image URLs (comma separated)" value={packageForm.gallery_image_urls} onChange={(e) => setPackageForm((p) => ({ ...p, gallery_image_urls: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
+                  <ImageUrlPreview urls={csvToArray(packageForm.gallery_image_urls)} />
+                  <ImageUploadField multiple files={packageGalleryFiles} onChange={setPackageGalleryFiles} />
                   <input required placeholder="Summary" value={packageForm.summary} onChange={(e) => setPackageForm((p) => ({ ...p, summary: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
                   <textarea required rows={3} placeholder="Description" value={packageForm.description} onChange={(e) => setPackageForm((p) => ({ ...p, description: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
                   <textarea required rows={3} placeholder="Departure notes" value={packageForm.departure_notes} onChange={(e) => setPackageForm((p) => ({ ...p, departure_notes: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
@@ -674,7 +903,7 @@ export function AdminPortal() {
                 </form>
               ) : null}
               <div className="space-y-3">
-                {packages.map((pkg) => (
+                {filteredPackages.map((pkg) => (
                   <article key={pkg.id} className="rounded-[16px] border border-slate-200 bg-white p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="flex gap-4">
@@ -688,22 +917,35 @@ export function AdminPortal() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <button type="button" className="cta-secondary px-4 py-2" onClick={() => { setEditingPackageId(pkg.id); setShowPackageForm(false); setPackageForm(toPackageForm(pkg)); }}>Edit</button>
+                        <button type="button" className="cta-secondary px-4 py-2" onClick={() => { setEditingPackageId(pkg.id); setShowPackageForm(false); setPackageForm(toPackageForm(pkg)); setPackageCoverFile(null); setPackageGalleryFiles([]); }}>Edit</button>
                         <button type="button" disabled={busyId === pkg.id} className="cta-secondary px-4 py-2" onClick={() => void patchPackage(pkg, { is_active: !pkg.is_active })}>{pkg.is_active ? 'Disable' : 'Enable'}</button>
                         <button type="button" disabled={busyId === pkg.id} className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700" onClick={() => void patchPackage(pkg, { is_active: false })}>Archive</button>
                       </div>
                     </div>
                     {editingPackageId === pkg.id ? (
-                      <form onSubmit={(event) => void updatePackage(event, pkg.id)} className="mt-4 grid gap-3 border-t border-slate-200 pt-4">
+                      <form noValidate onSubmit={(event) => void updatePackage(event, pkg.id)} className="mt-4 grid gap-3 border-t border-slate-200 pt-4">
                         <input required placeholder="Title" value={packageForm.title} onChange={(e) => setPackageForm((p) => ({ ...p, title: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
+                        <input required placeholder="Slug" value={packageForm.slug} onChange={(e) => setPackageForm((p) => ({ ...p, slug: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
+                        <OptionSelect value={packageForm.region} options={regionOptions} placeholder="Region" onChange={(value) => setPackageForm((p) => ({ ...p, region: value }))} />
+                        <OptionSelect value={packageForm.package_type} options={packageTypeOptions} placeholder="Package type" onChange={(value) => setPackageForm((p) => ({ ...p, package_type: value }))} />
+                        <OptionSelect value={packageForm.stay_style} options={stayStyleOptions} placeholder="Stay style" onChange={(value) => setPackageForm((p) => ({ ...p, stay_style: value }))} />
+                        <OptionSelect value={packageForm.difficulty_level} options={difficultyOptions} placeholder="Difficulty level" onChange={(value) => setPackageForm((p) => ({ ...p, difficulty_level: value }))} />
                         <input required placeholder="Summary" value={packageForm.summary} onChange={(e) => setPackageForm((p) => ({ ...p, summary: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
                         <textarea required rows={3} placeholder="Description" value={packageForm.description} onChange={(e) => setPackageForm((p) => ({ ...p, description: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                        <input required placeholder="Cover image URL" value={packageForm.cover_image_url} onChange={(e) => setPackageForm((p) => ({ ...p, cover_image_url: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
-                        <input required placeholder="Gallery image URLs (comma separated)" value={packageForm.gallery_image_urls} onChange={(e) => setPackageForm((p) => ({ ...p, gallery_image_urls: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
+                        <input required={!packageCoverFile} placeholder="Cover image URL" value={packageForm.cover_image_url} onChange={(e) => setPackageForm((p) => ({ ...p, cover_image_url: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
+                        <ImageUrlPreview urls={packageForm.cover_image_url.trim() ? [packageForm.cover_image_url.trim()] : []} />
+                        <ImageUploadField files={packageCoverFile ? [packageCoverFile] : []} onChange={(files) => setPackageCoverFile(files[0] ?? null)} />
+                        <TagEditor placeholder="Add destination stop" value={packageForm.destinations} onChange={(value) => setPackageForm((p) => ({ ...p, destinations: value }))} />
+                        <TagEditor placeholder="Add inclusion" value={packageForm.inclusions} presets={inclusionPresets} onChange={(value) => setPackageForm((p) => ({ ...p, inclusions: value }))} />
+                        <TagEditor placeholder="Add exclusion" value={packageForm.exclusions} presets={exclusionPresets} onChange={(value) => setPackageForm((p) => ({ ...p, exclusions: value }))} />
+                        <TagEditor placeholder="Add itinerary day/step" value={packageForm.itinerary_overview} onChange={(value) => setPackageForm((p) => ({ ...p, itinerary_overview: value }))} />
+                        <input required={packageGalleryFiles.length === 0} placeholder="Gallery image URLs (comma separated)" value={packageForm.gallery_image_urls} onChange={(e) => setPackageForm((p) => ({ ...p, gallery_image_urls: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
+                        <ImageUrlPreview urls={csvToArray(packageForm.gallery_image_urls)} />
+                        <ImageUploadField multiple files={packageGalleryFiles} onChange={setPackageGalleryFiles} />
                         <textarea required rows={3} placeholder="Departure notes" value={packageForm.departure_notes} onChange={(e) => setPackageForm((p) => ({ ...p, departure_notes: e.target.value }))} className="rounded-[14px] border border-slate-200 px-4 py-3 text-sm outline-none" />
                         <div className="flex gap-3">
                           <button type="submit" disabled={busyId === pkg.id} className="cta-primary">{busyId === pkg.id ? 'Saving...' : 'Save changes'}</button>
-                          <button type="button" className="cta-secondary" onClick={() => { setEditingPackageId(''); setPackageForm(buildPackageForm()); }}>Cancel</button>
+                          <button type="button" className="cta-secondary" onClick={() => { setEditingPackageId(''); setPackageForm(buildPackageForm()); setPackageCoverFile(null); setPackageGalleryFiles([]); }}>Cancel</button>
                         </div>
                       </form>
                     ) : null}
@@ -716,48 +958,18 @@ export function AdminPortal() {
       ) : null}
 
       {!loading && section === 'operations' ? (
-        <div className="space-y-4">
-          <section className="premium-card p-4">
-            <div className="flex gap-2">
-              <button type="button" onClick={() => setOpsTab('bookings')} className={`rounded-full px-4 py-2 text-sm font-semibold ${opsTab === 'bookings' ? 'bg-[var(--pine)] text-white' : 'border border-slate-200 bg-white text-slate-700'}`}>Bookings</button>
-              <button type="button" onClick={() => setOpsTab('custom')} className={`rounded-full px-4 py-2 text-sm font-semibold ${opsTab === 'custom' ? 'bg-[var(--pine)] text-white' : 'border border-slate-200 bg-white text-slate-700'}`}>Custom registrations</button>
-            </div>
-          </section>
-          <section className="premium-card p-6">
-            <h2 className="text-3xl text-slate-950 [font-family:var(--font-heading)]">{opsTab === 'bookings' ? 'Booking operations' : 'Custom trip operations'}</h2>
-            <div className="mt-4 space-y-3">
-              {opsTab === 'bookings'
-                ? bookings.map((item) => (
-                    <article key={item.id} className="rounded-[16px] border border-slate-200 bg-white p-4">
-                      <div className="flex justify-between items-start">
-                        <p className="font-semibold text-slate-900">{item.full_name}</p>
-                        <span className="text-[10px] font-mono bg-slate-100 px-2 py-1 rounded text-slate-500">{item.id}</span>
-                      </div>
-                      <p className="text-sm text-slate-600">{item.package.title} | {item.seats} seats</p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {statuses.map((status) => (
-                          <button key={`${item.id}-${status}`} type="button" disabled={busyId === item.id || item.status === status} onClick={() => void patchBookingStatus(item.id, status)} className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${item.status === status ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-white text-slate-700'}`}>{status}</button>
-                        ))}
-                      </div>
-                    </article>
-                  ))
-                : customRegistrations.map((item) => (
-                    <article key={item.id} className="rounded-[16px] border border-slate-200 bg-white p-4">
-                      <div className="flex justify-between items-start">
-                        <p className="font-semibold text-slate-900">{item.full_name}</p>
-                        <span className="text-[10px] font-mono bg-slate-100 px-2 py-1 rounded text-slate-500">{item.id}</span>
-                      </div>
-                      <p className="text-sm text-slate-600">{item.seats} seats | PKR {item.estimated_total.toLocaleString()}</p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {statuses.map((status) => (
-                          <button key={`${item.id}-${status}`} type="button" disabled={busyId === item.id || item.status === status} onClick={() => void patchCustomStatus(item.id, status)} className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${item.status === status ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-white text-slate-700'}`}>{status}</button>
-                        ))}
-                      </div>
-                    </article>
-                  ))}
-            </div>
-          </section>
-        </div>
+        <AdminOperations
+          opsTab={opsTab}
+          setOpsTab={setOpsTab}
+          opsStatusFilter={opsStatusFilter}
+          setOpsStatusFilter={setOpsStatusFilter}
+          statuses={statuses}
+          bookings={filteredBookings}
+          customRegistrations={filteredCustomRegistrations}
+          busyId={busyId}
+          patchBookingStatus={(id, status) => void patchBookingStatus(id, status)}
+          patchCustomStatus={(id, status) => void patchCustomStatus(id, status)}
+        />
       ) : null}
     </div>
   );

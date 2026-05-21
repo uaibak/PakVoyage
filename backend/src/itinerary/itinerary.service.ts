@@ -26,6 +26,19 @@ export class ItineraryService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  private getErrorDetails(error: unknown): { message: string; stack?: string } {
+    if (error instanceof Error) {
+      return {
+        message: error.message,
+        stack: error.stack,
+      };
+    }
+
+    return {
+      message: String(error),
+    };
+  }
+
   private generateId(prefix: string): string {
     // Generates a short, meaningful ID like PV-CTR-A1B2C3
     const randomPart = Math.random()
@@ -115,7 +128,11 @@ export class ItineraryService {
       });
       return itinerary;
     } catch (error) {
-      this.logger.error(`Failed to save itinerary: ${error.message}`, error.stack);
+      const errorDetails = this.getErrorDetails(error);
+      this.logger.error(
+        `Failed to save itinerary: ${errorDetails.message}`,
+        errorDetails.stack,
+      );
       throw new InternalServerErrorException('Failed to save itinerary. Please try again.');
     }
   }
@@ -146,7 +163,11 @@ export class ItineraryService {
         },
       });
     } catch (error) {
-      this.logger.error(`Failed to register custom trip: ${error.message}`, error.stack);
+      const errorDetails = this.getErrorDetails(error);
+      this.logger.error(
+        `Failed to register custom trip: ${errorDetails.message}`,
+        errorDetails.stack,
+      );
       throw new BadRequestException('Failed to process registration. Ensure all traveler details are correct.');
     }
   }

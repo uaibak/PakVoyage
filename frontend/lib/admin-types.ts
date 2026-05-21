@@ -20,9 +20,11 @@ export interface AdminBooking {
   full_name: string;
   email: string;
   phone: string;
+  national_id: string;
   seats: number;
   status: BookingStatus;
   total_amount: number;
+  special_requests: string | null;
   created_at: string;
   package: {
     id: string;
@@ -37,9 +39,15 @@ export interface AdminCustomRegistration {
   full_name: string;
   email: string;
   phone: string;
+  national_id: string;
   seats: number;
+  days: number;
   budget: number;
+  interests: string[];
+  trip_summary: string;
+  destinations: string[];
   estimated_total: number;
   status: BookingStatus;
+  special_requests: string | null;
   created_at: string;
 }

@@ -1,6 +1,9 @@
 import 'dotenv/config';
 import { BadRequestException, Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import * as express from 'express';
+import { existsSync, mkdirSync } from 'fs';
+import { join } from 'path';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { FileLogger } from './common/logging/file-logger.service';
@@ -12,6 +15,11 @@ async function bootstrap() {
   app.flushLogs();
 
   app.setGlobalPrefix('api');
+  const uploadsPath = join(process.cwd(), 'uploads');
+  if (!existsSync(uploadsPath)) {
+    mkdirSync(uploadsPath, { recursive: true });
+  }
+  app.use('/uploads', express.static(uploadsPath));
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -35,7 +43,12 @@ async function bootstrap() {
     }),
   );
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.enableCors();
+  const corsOrigin = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
+    : true;
+  app.enableCors({
+    origin: corsOrigin,
+  });
   await app.listen(process.env.PORT ?? 3001);
   logger.log(`PakVoyage backend running on port ${process.env.PORT ?? 3001}`);
 }
