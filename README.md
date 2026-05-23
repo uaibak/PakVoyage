@@ -28,6 +28,10 @@ PakVoyage/
   - budget
   - interests: `mountains`, `culture`, `food`
 - Cost breakdown with hotel, transport, and food estimates
+- Regional pricing markets for Pakistan residents, China travelers, and international travelers
+- Display currencies for PKR, USD, CNY, GBP, AED, SAR, and EUR
+- Pricing snapshots on bookings, saved itineraries, and custom trip registrations
+- Payment status/reference fields for package booking operations
 - Interactive budget visualization and trip rhythm hints in the planner
 - Save itinerary to PostgreSQL
 - Itinerary sharing capability via clipboard links
@@ -63,8 +67,10 @@ API endpoints:
 
 - `GET /api/destinations`
 - `GET /api/destinations/:id`
+- `GET /api/destinations/:id/quote`
 - `GET /api/packages`
 - `GET /api/packages/:id`
+- `GET /api/packages/:id/quote`
 - `POST /api/bookings`
 - `GET /api/bookings/:id`
 - `POST /api/itinerary/generate`
@@ -99,6 +105,10 @@ Defined in [backend/prisma/schema.prisma](d:/Work/PakVoyage/backend/prisma/schem
 - `CustomTripRegistration`
 - `TourPackage`
 - `Booking`
+- `BookingStatus`
+- `PaymentStatus`
+- `PricingMarket`
+- `DisplayCurrency`
 
 Saved itineraries are stored in:
 
@@ -173,10 +183,10 @@ npm run prisma:generate
 From [backend](d:/Work/PakVoyage/backend):
 
 ```powershell
-npx prisma db push
+npm run prisma:migrate
 ```
 
-This project currently uses `db push` for the MVP schema flow.
+For quick local prototyping you can still use `npx prisma db push`, but deployments should run migrations so pricing and payment snapshot fields are created predictably.
 
 ### 5. Seed sample data
 
@@ -208,6 +218,7 @@ Useful backend scripts:
 - `npm run build` - compile TypeScript
 - `npm run start:prod` - run compiled build
 - `npm run prisma:generate` - generate Prisma client
+- `npm run prisma:migrate` - apply Prisma migrations
 - `npm run db:seed` - seed destinations and packages
 - `npm run lint` - type-check the backend
 
@@ -241,6 +252,39 @@ When a user generates a plan on the frontend and clicks save:
 4. Related `itinerary_days` rows are created for each day in the trip
 5. The saved itinerary can later be fetched with `GET /api/itinerary/:id`
 
+Saved itinerary records also store the selected pricing market, display currency,
+exchange rate, display total, security cost, and service cost snapshot. This keeps
+the operational PKR totals and the customer-facing displayed totals available later.
+
+## Regional Pricing and Currency
+
+PakVoyage supports three pricing markets:
+
+- `LOCAL_PK` - Pakistan resident/local rates
+- `CHINA` - China traveler rates with CNY default display currency
+- `INTERNATIONAL` - international traveler rates with USD default display currency
+
+Supported display currencies:
+
+- `PKR`
+- `USD`
+- `CNY`
+- `GBP`
+- `AED`
+- `SAR`
+- `EUR`
+
+Pricing behavior:
+
+1. Backend pricing remains the source of truth through `PricingService`.
+2. Package booking totals are quoted through `GET /api/packages/:id/quote`.
+3. Destination daily estimates are quoted through `GET /api/destinations/:id/quote`.
+4. Itinerary generation returns both PKR operational totals and selected-currency display totals.
+5. Bookings, saved itineraries, and custom trip registrations persist pricing snapshots.
+
+The frontend stores the user's market/currency preference in local storage and uses it
+across destination cards, package cards, planner, booking, results, and custom trip registration.
+
 ## How Custom Itinerary Registration Works
 
 Travelers can register for a generated itinerary from a dedicated form page:
@@ -263,7 +307,8 @@ Pricing behavior for custom registrations:
 1. The generated itinerary total is treated as per-seat price
 2. User selects seat count (1 to 10)
 3. Estimated total updates live as `per-seat price x seats`
-4. The computed total is sent as `estimated_total` in the registration payload
+4. The computed PKR total is sent as `estimated_total` in the registration payload
+5. Pricing market, display currency, exchange rate, display total, security cost, and service cost are stored with the registration
 
 Itinerary implementation references:
 
@@ -345,7 +390,8 @@ When a booking is created:
 3. The backend checks seat availability
 4. A `bookings` record is created
 5. `available_seats` on the selected package is reduced
-6. A booking response with booking ID and total amount is returned
+6. Pricing market, display currency, exchange rate, display total, and PKR total are stored as a booking snapshot
+7. A booking response with booking ID, status, payment status, and total amount is returned
 
 Booking implementation references:
 

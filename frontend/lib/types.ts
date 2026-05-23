@@ -1,3 +1,5 @@
+import type { DisplayCurrency, PricingMarket, PricingQuote } from './pricing';
+
 export type TravelInterest = 'mountains' | 'culture' | 'food';
 
 export interface Destination {
@@ -20,6 +22,7 @@ export interface GeneratedItineraryDay {
   destination: Destination;
   activities: string;
   cost: number;
+  pricing?: PricingQuote;
 }
 
 export interface GeneratedItinerary {
@@ -33,12 +36,15 @@ export interface GeneratedItinerary {
     total: number;
     is_within_budget: boolean;
   };
+  pricing?: PricingQuote;
 }
 
 export interface TripRequest {
   days: number;
   budget: number;
   interests: TravelInterest[];
+  pricing_market?: PricingMarket;
+  display_currency?: DisplayCurrency;
 }
 
 export interface SavedItineraryDay {
@@ -61,11 +67,18 @@ export interface SavedItinerary {
   hotel_cost: number;
   transport_cost: number;
   food_cost: number;
+  pricing_market: PricingMarket;
+  display_currency: DisplayCurrency;
+  exchange_rate: number;
+  display_total: number | null;
+  security_cost: number;
+  service_cost: number;
   created_at: string;
   itinerary_days: SavedItineraryDay[];
 }
 
 export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED';
+export type PaymentStatus = 'UNPAID' | 'PARTIAL' | 'PAID' | 'REFUNDED';
 
 export interface TourPackage {
   id: string;
@@ -104,10 +117,18 @@ export interface Booking {
   national_id: string | null;
   seats: number;
   status: BookingStatus;
+  payment_status: PaymentStatus;
+  payment_reference: string | null;
   total_amount: number;
+  pricing_market: PricingMarket;
+  display_currency: DisplayCurrency;
+  exchange_rate: number;
+  display_total: number | null;
+  service_cost: number;
   special_requests: string | null;
   created_at: string;
   package: TourPackage;
+  pricing?: PricingQuote;
 }
 
 export interface CreateBookingRequest {
@@ -118,6 +139,10 @@ export interface CreateBookingRequest {
   national_id: string;
   seats: number;
   special_requests?: string;
+  pricing_market?: PricingMarket;
+  display_currency?: DisplayCurrency;
+  payment_status?: PaymentStatus;
+  payment_reference?: string;
 }
 
 export interface CustomTripRegistration {
@@ -134,6 +159,14 @@ export interface CustomTripRegistration {
   trip_summary: string;
   destinations: string[];
   estimated_total: number;
+  pricing_market: PricingMarket;
+  display_currency: DisplayCurrency;
+  exchange_rate: number;
+  display_total: number | null;
+  security_cost: number;
+  service_cost: number;
+  payment_status: PaymentStatus;
+  payment_reference: string | null;
   status: BookingStatus;
   special_requests: string | null;
   created_at: string;

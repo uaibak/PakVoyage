@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PackageSeatPrice } from '@/components/money';
 import { TourPackage } from '@/lib/types';
 
 interface PackageCardProps {
@@ -44,7 +45,10 @@ export function PackageCard({
           <div className="rounded-[22px] border border-slate-200 bg-white p-4">
             <p className="text-[11px] uppercase tracking-[0.22em] text-slate-600">Per seat</p>
             <p className="mt-2 text-sm font-semibold text-slate-900">
-              PKR {travelPackage.price_per_seat.toLocaleString()}
+              <PackageSeatPrice
+                packageId={travelPackage.id}
+                pricePerSeatPkr={travelPackage.price_per_seat}
+              />
             </p>
           </div>
           <div className="rounded-[22px] border border-slate-200 bg-white p-4">

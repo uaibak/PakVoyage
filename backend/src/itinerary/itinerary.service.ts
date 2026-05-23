@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { Destination } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PricingService } from '../pricing/pricing.service';
 import { GenerateItineraryDto } from './dto/generate-itinerary.dto';
 import { RegisterCustomTripDto } from './dto/register-custom-trip.dto';
 import { SaveItineraryDto } from './dto/save-itinerary.dto';
@@ -11,6 +12,8 @@ import {
   SavedItineraryResponse,
 } from './itinerary.types';
 import { TravelInterest } from './travel-interest.enum';
+
+type BaseGeneratedItineraryDay = Omit<GeneratedItineraryDay, 'pricing'>;
 
 type DestinationName =
   | 'Hunza'
@@ -24,7 +27,10 @@ type DestinationName =
 export class ItineraryService {
   private readonly logger = new Logger(ItineraryService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pricingService: PricingService,
+  ) {}
 
   private getErrorDetails(error: unknown): { message: string; stack?: string } {
     if (error instanceof Error) {
@@ -64,7 +70,7 @@ export class ItineraryService {
     const selectedDestinations = this.pickDestinations(destinations, dto);
     const daysPerDestination = this.splitDays(dto.days, selectedDestinations.length);
 
-    const itineraryDays = selectedDestinations.flatMap((destination, index) =>
+    const baseItineraryDays = selectedDestinations.flatMap((destination, index) =>
       this.buildDaysForDestination(
         destination,
         daysPerDestination[index],
@@ -74,22 +80,36 @@ export class ItineraryService {
       ),
     );
 
-    const hotelCost = itineraryDays.reduce((total, day) => total + day.cost, 0);
+    const itineraryDays = baseItineraryDays.map((day) => ({
+      ...day,
+      pricing: this.pricingService.quoteItineraryDay(day.cost, dto),
+    }));
+
+    const hotelCost = baseItineraryDays.reduce((total, day) => total + day.cost, 0);
     const transportCost = this.calculateTransportCost(selectedDestinations.length);
     const foodCost = dto.days * 1800;
-    const totalCost = hotelCost + transportCost + foodCost;
+    const pricing = this.pricingService.quoteItinerary(
+      {
+        hotel: hotelCost,
+        transport: transportCost,
+        food: foodCost,
+        days: dto.days,
+      },
+      dto,
+    );
 
     return {
       trip_summary: this.buildSummary(selectedDestinations, dto.days, dto.interests),
       destinations: selectedDestinations,
       itinerary_days: itineraryDays,
       cost_breakdown: {
-        hotel: hotelCost,
-        transport: transportCost,
-        food: foodCost,
-        total: totalCost,
-        is_within_budget: totalCost <= dto.budget,
+        hotel: pricing.breakdown_pkr.hotel,
+        transport: pricing.breakdown_pkr.transport,
+        food: pricing.breakdown_pkr.food,
+        total: pricing.breakdown_pkr.total,
+        is_within_budget: pricing.base_total_pkr <= dto.budget,
       },
+      pricing,
     };
   }
 
@@ -106,6 +126,12 @@ export class ItineraryService {
           hotel_cost: dto.hotel_cost,
           transport_cost: dto.transport_cost,
           food_cost: dto.food_cost,
+          pricing_market: dto.pricing_market,
+          display_currency: dto.display_currency,
+          exchange_rate: dto.exchange_rate,
+          display_total: dto.display_total,
+          security_cost: dto.security_cost,
+          service_cost: dto.service_cost,
           itinerary_days: {
             create: dto.itinerary_days.map((day) => ({
               day_number: day.day_number,
@@ -159,7 +185,25 @@ export class ItineraryService {
       return await this.prisma.customTripRegistration.create({
         data: {
           id: this.generateId('PV-CTR'),
-          ...dto, // Ensure DTO matches Prisma schema exactly
+          itinerary_id: dto.itinerary_id,
+          full_name: dto.full_name,
+          email: dto.email,
+          phone: dto.phone,
+          national_id: dto.national_id,
+          seats: dto.seats,
+          days: dto.days,
+          budget: dto.budget,
+          interests: dto.interests,
+          trip_summary: dto.trip_summary,
+          destinations: dto.destinations,
+          estimated_total: dto.estimated_total,
+          pricing_market: dto.pricing_market,
+          display_currency: dto.display_currency,
+          exchange_rate: dto.exchange_rate,
+          display_total: dto.display_total,
+          security_cost: dto.security_cost,
+          service_cost: dto.service_cost,
+          special_requests: dto.special_requests,
         },
       });
     } catch (error) {
@@ -259,7 +303,7 @@ export class ItineraryService {
     destination: Destination,
     daysAtDestination: number,
     firstDayNumber: number,
-  ): GeneratedItineraryDay[] {
+  ): BaseGeneratedItineraryDay[] {
     const activityTemplates = this.getActivities(destination.name);
 
     return Array.from({ length: daysAtDestination }, (_, index) => ({

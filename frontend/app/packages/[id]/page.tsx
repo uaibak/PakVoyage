@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { BookingForm } from '@/components/booking-form';
 import { GalleryStrip } from '@/components/gallery-strip';
+import { PackageSeatPrice } from '@/components/money';
 import { StatPill } from '@/components/stat-pill';
 import { apiBaseUrl } from '@/lib/api';
 import { TourPackage } from '@/lib/types';
@@ -71,7 +72,12 @@ export default async function PackageDetailPage({
             <StatPill label="Pickup city" value={travelPackage.pickup_city} tone="dark" />
             <StatPill
               label="Price per seat"
-              value={`PKR ${travelPackage.price_per_seat.toLocaleString()}`}
+              value={
+                <PackageSeatPrice
+                  packageId={travelPackage.id}
+                  pricePerSeatPkr={travelPackage.price_per_seat}
+                />
+              }
               tone="dark"
             />
           </div>

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { apiBaseUrl } from '@/lib/api';
 import { FilterChip } from '@/components/filter-chip';
 import { GalleryStrip } from '@/components/gallery-strip';
+import { Money } from '@/components/money';
 import { StatPill } from '@/components/stat-pill';
 import { Destination } from '@/lib/types';
 
@@ -62,7 +63,12 @@ export default async function DestinationPage({
             <StatPill label="Best season" value={destination.best_time} tone="dark" />
             <StatPill
               label="Average daily cost"
-              value={`PKR ${destination.avg_cost_per_day.toLocaleString()}`}
+              value={
+                <Money
+                  amountPkr={destination.avg_cost_per_day}
+                  destinationId={destination.id}
+                />
+              }
               tone="dark"
             />
           </div>
@@ -98,7 +104,10 @@ export default async function DestinationPage({
                 Daily spend
               </p>
               <p className="mt-3 text-2xl text-slate-950 [font-family:var(--font-heading)]">
-                PKR {destination.avg_cost_per_day.toLocaleString()}
+                <Money
+                  amountPkr={destination.avg_cost_per_day}
+                  destinationId={destination.id}
+                />
               </p>
             </div>
           </div>

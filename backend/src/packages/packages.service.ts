@@ -1,11 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, TourPackage } from '@prisma/client';
+import { PricingService } from '../pricing/pricing.service';
+import { PricingQuote } from '../pricing/pricing.types';
 import { ListPackagesDto } from './dto/list-packages.dto';
+import { QuotePackageDto } from './dto/quote-package.dto';
 
 @Injectable()
 export class PackagesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pricingService: PricingService,
+  ) {}
 
   async findAll(query: ListPackagesDto): Promise<TourPackage[]> {
     const where: Prisma.TourPackageWhereInput = {
@@ -72,5 +78,15 @@ export class PackagesService {
     }
 
     return travelPackage;
+  }
+
+  async quotePackage(id: string, query: QuotePackageDto): Promise<PricingQuote> {
+    const travelPackage = await this.findOne(id);
+
+    return this.pricingService.quotePackageSeat(
+      travelPackage.price_per_seat,
+      query.seats,
+      query,
+    );
   }
 }

@@ -1,11 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Destination, Prisma } from '@prisma/client';
+import { PricingService } from '../pricing/pricing.service';
+import { PricingQuote } from '../pricing/pricing.types';
 import { ListDestinationsDto } from './dto/list-destinations.dto';
+import { QuoteDestinationDto } from './dto/quote-destination.dto';
 
 @Injectable()
 export class DestinationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pricingService: PricingService,
+  ) {}
 
   async findAll(query: ListDestinationsDto): Promise<Destination[]> {
     const where: Prisma.DestinationWhereInput = {
@@ -59,5 +65,17 @@ export class DestinationsService {
     }
 
     return destination;
+  }
+
+  async quoteDestination(
+    id: string,
+    query: QuoteDestinationDto,
+  ): Promise<PricingQuote> {
+    const destination = await this.findOne(id);
+
+    return this.pricingService.quoteDestinationDay(
+      destination.avg_cost_per_day,
+      query,
+    );
   }
 }

@@ -11,6 +11,22 @@ function formatDate(value: string): string {
   });
 }
 
+function formatDisplayAmount(
+  displayTotal: number | null,
+  currency: string,
+  fallbackPkr: number,
+): string {
+  if (!displayTotal) {
+    return `PKR ${fallbackPkr.toLocaleString()}`;
+  }
+
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: currency === 'PKR' ? 0 : 2,
+  }).format(displayTotal);
+}
+
 export function AdminOperations({
   opsTab,
   setOpsTab,
@@ -125,8 +141,13 @@ function BookingCard({
       </div>
       <div className="mt-3 grid gap-2 text-sm text-slate-600 md:grid-cols-2">
         <p>
-          {item.package.title} | {item.seats} seats | PKR {item.total_amount.toLocaleString()}
+          {item.package.title} | {item.seats} seats |{' '}
+          {formatDisplayAmount(item.display_total, item.display_currency, item.total_amount)}
         </p>
+        <p>
+          Market: {item.pricing_market} | Payment: {item.payment_status}
+        </p>
+        <p>PKR record: PKR {item.total_amount.toLocaleString()}</p>
         <p>Departure: {formatDate(item.package.travel_date)}</p>
         <p>{item.email}</p>
         <p>{item.phone}</p>
@@ -180,8 +201,11 @@ function CustomRegistrationCard({
       </div>
       <div className="mt-3 grid gap-2 text-sm text-slate-600 md:grid-cols-2">
         <p>
-          {item.seats} seats | {item.days} days | PKR {item.estimated_total.toLocaleString()}
+          {item.seats} seats | {item.days} days |{' '}
+          {formatDisplayAmount(item.display_total, item.display_currency, item.estimated_total)}
         </p>
+        <p>Market: {item.pricing_market}</p>
+        <p>PKR record: PKR {item.estimated_total.toLocaleString()}</p>
         <p>Budget: PKR {item.budget.toLocaleString()}</p>
         <p>{item.email}</p>
         <p>{item.phone}</p>

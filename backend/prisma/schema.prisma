@@ -49,6 +49,12 @@ model Itinerary {
   hotel_cost     Int
   transport_cost Int
   food_cost      Int
+  pricing_market PricingMarket  @default(LOCAL_PK)
+  display_currency DisplayCurrency @default(PKR)
+  exchange_rate   Float         @default(1)
+  display_total   Float?
+  security_cost   Int           @default(0)
+  service_cost    Int           @default(0)
   created_at     DateTime       @default(now())
   user           User?          @relation(fields: [user_id], references: [id])
   itinerary_days ItineraryDay[]
@@ -110,7 +116,14 @@ model Booking {
   national_id      String
   seats            Int
   status           BookingStatus @default(PENDING)
+  payment_status   PaymentStatus @default(UNPAID)
+  payment_reference String?
   total_amount     Int
+  pricing_market   PricingMarket @default(LOCAL_PK)
+  display_currency DisplayCurrency @default(PKR)
+  exchange_rate    Float         @default(1)
+  display_total    Float?
+  service_cost     Int           @default(0)
   special_requests String?
   created_at       DateTime      @default(now())
   package          TourPackage   @relation(fields: [package_id], references: [id])
@@ -133,6 +146,14 @@ model CustomTripRegistration {
   trip_summary     String
   destinations     String[]
   estimated_total  Int
+  pricing_market   PricingMarket @default(LOCAL_PK)
+  display_currency DisplayCurrency @default(PKR)
+  exchange_rate    Float         @default(1)
+  display_total    Float?
+  security_cost    Int           @default(0)
+  service_cost     Int           @default(0)
+  payment_status   PaymentStatus @default(UNPAID)
+  payment_reference String?
   status           BookingStatus @default(PENDING)
   special_requests String?
   created_at       DateTime      @default(now())
@@ -145,4 +166,27 @@ enum BookingStatus {
   PENDING
   CONFIRMED
   CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+  REFUNDED
+}
+
+enum PricingMarket {
+  LOCAL_PK
+  CHINA
+  INTERNATIONAL
+}
+
+enum DisplayCurrency {
+  PKR
+  USD
+  CNY
+  GBP
+  AED
+  SAR
+  EUR
 }

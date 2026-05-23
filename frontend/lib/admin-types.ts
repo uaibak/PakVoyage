@@ -1,4 +1,10 @@
-import { BookingStatus, Destination, TourPackage } from './types';
+import {
+  BookingStatus,
+  Destination,
+  PaymentStatus,
+  TourPackage,
+} from './types';
+import { DisplayCurrency, PricingMarket } from './pricing';
 
 export interface AdminOverview {
   destinations_count: number;
@@ -23,7 +29,14 @@ export interface AdminBooking {
   national_id: string;
   seats: number;
   status: BookingStatus;
+  payment_status: PaymentStatus;
+  payment_reference: string | null;
   total_amount: number;
+  pricing_market: PricingMarket;
+  display_currency: DisplayCurrency;
+  exchange_rate: number;
+  display_total: number | null;
+  service_cost: number;
   special_requests: string | null;
   created_at: string;
   package: {
@@ -47,6 +60,14 @@ export interface AdminCustomRegistration {
   trip_summary: string;
   destinations: string[];
   estimated_total: number;
+  pricing_market: PricingMarket;
+  display_currency: DisplayCurrency;
+  exchange_rate: number;
+  display_total: number | null;
+  security_cost: number;
+  service_cost: number;
+  payment_status: PaymentStatus;
+  payment_reference: string | null;
   status: BookingStatus;
   special_requests: string | null;
   created_at: string;

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Money } from '@/components/money';
 import { Destination } from '@/lib/types';
 
 interface DestinationCardProps {
@@ -45,7 +46,11 @@ export function DestinationCard({
                 Estimated from
               </p>
               <p className="mt-2 text-sm font-semibold text-slate-900">
-                PKR {destination.avg_cost_per_day.toLocaleString()} / day
+                <Money
+                  amountPkr={destination.avg_cost_per_day}
+                  destinationId={destination.id}
+                  suffix=" / day"
+                />
               </p>
             </div>
           </div>

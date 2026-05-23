@@ -11,6 +11,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
+import { DisplayCurrency, PricingMarket } from '../../pricing/pricing.types';
 import { TravelInterest } from '../travel-interest.enum';
 
 export class RegisterCustomTripDto {
@@ -68,6 +69,36 @@ export class RegisterCustomTripDto {
   @IsInt()
   @Min(0)
   readonly estimated_total!: number;
+
+  @IsOptional()
+  @IsEnum(PricingMarket)
+  readonly pricing_market?: PricingMarket;
+
+  @IsOptional()
+  @IsEnum(DisplayCurrency)
+  readonly display_currency?: DisplayCurrency;
+
+  @IsOptional()
+  @Type(() => Number)
+  @Min(0)
+  readonly exchange_rate?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @Min(0)
+  readonly display_total?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  readonly security_cost?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  readonly service_cost?: number;
 
   @IsOptional()
   @IsString()

@@ -6,6 +6,7 @@ import { apiBaseUrl } from '@/lib/api';
 import { parseApiError } from '@/lib/api-error';
 import { SectionHeading } from '@/components/section-heading';
 import { StatPill } from '@/components/stat-pill';
+import { convertPkrToDisplay, formatMoney } from '@/lib/pricing';
 import {
   GeneratedItinerary,
   SavedItinerary,
@@ -61,6 +62,12 @@ export function ResultsView() {
           hotel_cost: itinerary.cost_breakdown.hotel,
           transport_cost: itinerary.cost_breakdown.transport,
           food_cost: itinerary.cost_breakdown.food,
+          pricing_market: itinerary.pricing?.market,
+          display_currency: itinerary.pricing?.currency,
+          exchange_rate: itinerary.pricing?.exchange_rate,
+          display_total: itinerary.pricing?.display_total,
+          security_cost: itinerary.pricing?.breakdown_pkr.security,
+          service_cost: itinerary.pricing?.breakdown_pkr.service,
           itinerary_days: itinerary.itinerary_days.map((day) => ({
             day_number: day.day_number,
             destination_id: day.destination.id,
@@ -86,6 +93,31 @@ export function ResultsView() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const displayCost = (
+    pkrAmount: number,
+    displayAmount?: number,
+  ): string => {
+    if (!itinerary?.pricing) {
+      return `PKR ${pkrAmount.toLocaleString()}`;
+    }
+
+    return formatMoney(
+      displayAmount ?? pkrAmount,
+      itinerary.pricing.currency,
+    );
+  };
+
+  const displayPkrAmount = (pkrAmount: number): string => {
+    if (!itinerary?.pricing) {
+      return `PKR ${pkrAmount.toLocaleString()}`;
+    }
+
+    return formatMoney(
+      convertPkrToDisplay(pkrAmount, itinerary.pricing.currency),
+      itinerary.pricing.currency,
+    );
   };
 
   const handleShare = () => {
@@ -145,7 +177,12 @@ export function ResultsView() {
             <StatPill label="Trip length" value={`${tripRequest.days} days`} tone="dark" />
             <StatPill
               label="Target budget"
-              value={`PKR ${tripRequest.budget.toLocaleString()}`}
+              value={displayPkrAmount(tripRequest.budget)}
+              tone="dark"
+            />
+            <StatPill
+              label="Pricing market"
+              value={itinerary.pricing?.market ?? tripRequest.pricing_market ?? 'LOCAL_PK'}
               tone="dark"
             />
             <StatPill
@@ -190,7 +227,9 @@ export function ResultsView() {
                     </div>
 
                     <div className="rounded-full border border-[rgba(34,101,74,0.14)] bg-[rgba(34,101,74,0.08)] px-4 py-2 text-sm font-semibold text-[var(--pine)]">
-                      PKR {day.cost.toLocaleString()}
+                      {day.pricing
+                        ? formatMoney(day.pricing.display_total, day.pricing.currency)
+                        : displayPkrAmount(day.cost)}
                     </div>
                   </div>
 
@@ -224,19 +263,61 @@ export function ResultsView() {
             <div className="mt-6 space-y-3 text-sm text-slate-700">
               <div className="flex items-center justify-between">
                 <span>Hotel</span>
-                <span>PKR {itinerary.cost_breakdown.hotel.toLocaleString()}</span>
+                <span>
+                  {displayCost(
+                    itinerary.cost_breakdown.hotel,
+                    itinerary.pricing?.breakdown_display.hotel,
+                  )}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span>Transport</span>
-                <span>PKR {itinerary.cost_breakdown.transport.toLocaleString()}</span>
+                <span>
+                  {displayCost(
+                    itinerary.cost_breakdown.transport,
+                    itinerary.pricing?.breakdown_display.transport,
+                  )}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span>Food</span>
-                <span>PKR {itinerary.cost_breakdown.food.toLocaleString()}</span>
+                <span>
+                  {displayCost(
+                    itinerary.cost_breakdown.food,
+                    itinerary.pricing?.breakdown_display.food,
+                  )}
+                </span>
               </div>
+              {itinerary.pricing && itinerary.pricing.breakdown_pkr.security > 0 ? (
+                <div className="flex items-center justify-between">
+                  <span>Security and handling</span>
+                  <span>
+                    {displayCost(
+                      itinerary.pricing.breakdown_pkr.security,
+                      itinerary.pricing.breakdown_display.security,
+                    )}
+                  </span>
+                </div>
+              ) : null}
+              {itinerary.pricing && itinerary.pricing.breakdown_pkr.service > 0 ? (
+                <div className="flex items-center justify-between">
+                  <span>Service adjustment</span>
+                  <span>
+                    {displayCost(
+                      itinerary.pricing.breakdown_pkr.service,
+                      itinerary.pricing.breakdown_display.service,
+                    )}
+                  </span>
+                </div>
+              ) : null}
               <div className="flex items-center justify-between border-t border-slate-200 pt-3 text-base font-semibold text-slate-950">
                 <span>Total</span>
-                <span>PKR {itinerary.cost_breakdown.total.toLocaleString()}</span>
+                <span>
+                  {displayCost(
+                    itinerary.cost_breakdown.total,
+                    itinerary.pricing?.display_total,
+                  )}
+                </span>
               </div>
             </div>
             <p

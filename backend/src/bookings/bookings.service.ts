@@ -1,12 +1,16 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { BookingStatus } from '@prisma/client';
+import { BookingStatus, PaymentStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PricingService } from '../pricing/pricing.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { BookingResponse } from './booking.types';
 
 @Injectable()
 export class BookingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pricingService: PricingService,
+  ) {}
 
   async create(dto: CreateBookingDto): Promise<BookingResponse> {
     return this.prisma.$transaction(async (tx) => {
@@ -44,6 +48,12 @@ export class BookingsService {
         );
       }
 
+      const pricing = this.pricingService.quotePackageSeat(
+        travelPackage.price_per_seat,
+        dto.seats,
+        dto,
+      );
+
       const booking = await tx.booking.create({
         data: {
           package_id: dto.package_id,
@@ -54,7 +64,14 @@ export class BookingsService {
           national_id: dto.national_id,
           seats: dto.seats,
           status: BookingStatus.PENDING,
-          total_amount: travelPackage.price_per_seat * dto.seats,
+          payment_status: dto.payment_status ?? PaymentStatus.UNPAID,
+          payment_reference: dto.payment_reference,
+          total_amount: pricing.base_total_pkr,
+          pricing_market: pricing.market,
+          display_currency: pricing.currency,
+          exchange_rate: pricing.exchange_rate,
+          display_total: pricing.display_total,
+          service_cost: pricing.breakdown_pkr.service,
           special_requests: dto.special_requests,
         },
         include: {
@@ -62,7 +79,10 @@ export class BookingsService {
         },
       });
 
-      return booking;
+      return {
+        ...booking,
+        pricing,
+      };
     });
   }
 

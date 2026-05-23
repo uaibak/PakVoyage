@@ -1,9 +1,19 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiBaseUrl } from '@/lib/api';
 import { parseApiError } from '@/lib/api-error';
+import { PricingSelector } from '@/components/pricing-selector';
+import {
+  convertDisplayToPkr,
+  convertPkrToDisplay,
+  defaultPricingSelection,
+  formatMoney,
+  PricingSelection,
+  readPricingSelection,
+  savePricingSelection,
+} from '@/lib/pricing';
 import { TravelInterest } from '@/lib/types';
 
 const interestOptions: { label: string; value: TravelInterest; description: string }[] = [
@@ -29,8 +39,17 @@ export function PlannerForm() {
   const [days, setDays] = useState<string>('7');
   const [budget, setBudget] = useState<string>('70000');
   const [interests, setInterests] = useState<TravelInterest[]>(['mountains']);
+  const [pricingSelection, setPricingSelection] = useState<PricingSelection>(
+    defaultPricingSelection,
+  );
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+
+  useEffect(() => {
+    const detectedSelection = readPricingSelection();
+    setPricingSelection(detectedSelection);
+    setBudget(String(convertPkrToDisplay(70000, detectedSelection.display_currency)));
+  }, []);
 
   const destinationHint = useMemo(() => {
     const parsedDays = Number(days);
@@ -41,19 +60,22 @@ export function PlannerForm() {
   }, [days]);
 
   const budgetTone = useMemo(() => {
-    const parsedBudget = Number(budget);
+    const parsedBudget = convertDisplayToPkr(
+      Number(budget),
+      pricingSelection.display_currency,
+    );
 
     if (parsedBudget < 40000) return 'Tighter budget: expect trade-offs on longer routes.';
     if (parsedBudget < 90000) return 'Balanced budget: comfortable for most curated routes.';
     return 'Flexible budget: room for richer pacing and upgrades.';
-  }, [budget]);
+  }, [budget, pricingSelection.display_currency]);
 
   const budgetPercentage = useMemo(() => {
-    const b = Number(budget);
+    const b = convertDisplayToPkr(Number(budget), pricingSelection.display_currency);
     const min = 10000;
     const max = 200000;
     return Math.min(Math.max(((b - min) / (max - min)) * 100, 0), 100);
-  }, [budget]);
+  }, [budget, pricingSelection.display_currency]);
 
   const toggleInterest = (interest: TravelInterest): void => {
     setInterests((current) =>
@@ -61,6 +83,17 @@ export function PlannerForm() {
         ? current.filter((item) => item !== interest)
         : [...current, interest],
     );
+  };
+
+  const updatePricingSelection = (selection: PricingSelection): void => {
+    const budgetPkr = convertDisplayToPkr(
+      Number(budget),
+      pricingSelection.display_currency,
+    );
+
+    setBudget(String(convertPkrToDisplay(budgetPkr, selection.display_currency)));
+    setPricingSelection(selection);
+    savePricingSelection(selection);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
@@ -75,13 +108,19 @@ export function PlannerForm() {
     setError('');
 
     try {
+      const budgetPkr = convertDisplayToPkr(
+        Number(budget),
+        pricingSelection.display_currency,
+      );
+
       const response = await fetch(`${apiBaseUrl}/itinerary/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           days: Number(days),
-          budget: Number(budget),
+          budget: budgetPkr,
           interests,
+          ...pricingSelection,
         }),
       });
 
@@ -95,8 +134,9 @@ export function PlannerForm() {
         'pakvoyage.tripRequest',
         JSON.stringify({
           days: Number(days),
-          budget: Number(budget),
+          budget: budgetPkr,
           interests,
+          ...pricingSelection,
         }),
       );
       router.push('/results');
@@ -142,7 +182,7 @@ export function PlannerForm() {
                   Budget view
                 </p>
                 <p className="mt-3 text-3xl text-white [font-family:var(--font-heading)]">
-                  PKR {Number(budget).toLocaleString()}
+                  {formatMoney(Number(budget), pricingSelection.display_currency)}
                 </p>
                 <div className="mt-4 h-1.5 w-full rounded-full bg-white/10">
                   <div className="h-full rounded-full bg-emerald-400 transition-all duration-500" style={{ width: `${budgetPercentage}%` }} />
@@ -174,7 +214,7 @@ export function PlannerForm() {
 
                   <label className="rounded-[24px] border border-slate-200 bg-white/96 p-5">
                     <span className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
-                      Budget
+                      Budget ({pricingSelection.display_currency})
                     </span>
                     <input
                       type="number"
@@ -227,6 +267,11 @@ export function PlannerForm() {
                   })}
                 </div>
               </div>
+
+              <PricingSelector
+                value={pricingSelection}
+                onChange={updatePricingSelection}
+              />
 
               {error ? (
                 <div className="rounded-[22px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-700">

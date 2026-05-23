@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { BookingStatus, Destination, TourPackage } from '@prisma/client';
+import { BookingStatus, Destination, DisplayCurrency, PaymentStatus, PricingMarket, TourPackage } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateDestinationAdminDto } from './dto/create-destination-admin.dto';
 import { UpdateDestinationAdminDto } from './dto/update-destination-admin.dto';
@@ -32,7 +32,14 @@ type AdminBookingListItem = {
   national_id: string;
   seats: number;
   status: BookingStatus;
+  payment_status: PaymentStatus;
+  payment_reference: string | null;
   total_amount: number;
+  pricing_market: PricingMarket;
+  display_currency: DisplayCurrency;
+  exchange_rate: number;
+  display_total: number | null;
+  service_cost: number;
   special_requests: string | null;
   created_at: Date;
   package: {
@@ -56,6 +63,14 @@ type AdminCustomRegistrationListItem = {
   trip_summary: string;
   destinations: string[];
   estimated_total: number;
+  pricing_market: PricingMarket;
+  display_currency: DisplayCurrency;
+  exchange_rate: number;
+  display_total: number | null;
+  security_cost: number;
+  service_cost: number;
+  payment_status: PaymentStatus;
+  payment_reference: string | null;
   status: BookingStatus;
   special_requests: string | null;
   created_at: Date;
@@ -74,7 +89,8 @@ export class AdminService {
       pendingBookingsCount,
       customTripCount,
       pendingCustomTripCount,
-      confirmedRevenue,
+      confirmedBookingRevenue,
+      confirmedCustomTripRevenue,
     ] = await Promise.all([
       this.prisma.destination.count(),
       this.prisma.tourPackage.count(),
@@ -89,6 +105,10 @@ export class AdminService {
         where: { status: BookingStatus.CONFIRMED },
         _sum: { total_amount: true },
       }),
+      this.prisma.customTripRegistration.aggregate({
+        where: { status: BookingStatus.CONFIRMED },
+        _sum: { estimated_total: true },
+      }),
     ]);
 
     return {
@@ -99,7 +119,9 @@ export class AdminService {
       pending_bookings_count: pendingBookingsCount,
       custom_trip_registrations_count: customTripCount,
       pending_custom_registrations_count: pendingCustomTripCount,
-      confirmed_revenue: confirmedRevenue._sum.total_amount ?? 0,
+      confirmed_revenue:
+        (confirmedBookingRevenue._sum.total_amount ?? 0) +
+        (confirmedCustomTripRevenue._sum.estimated_total ?? 0),
     };
   }
 
@@ -274,6 +296,8 @@ export class AdminService {
         where: { id },
         data: {
           status: dto.status,
+          payment_status: dto.payment_status,
+          payment_reference: dto.payment_reference,
         },
         include: {
           package: {

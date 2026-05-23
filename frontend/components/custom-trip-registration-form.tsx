@@ -4,6 +4,11 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { apiBaseUrl } from '@/lib/api';
 import { parseApiError } from '@/lib/api-error';
+import {
+  convertPkrToDisplay,
+  defaultPricingSelection,
+  formatMoney,
+} from '@/lib/pricing';
 import { CustomTripRegistration, GeneratedItinerary, TripRequest } from '@/lib/types';
 
 export function CustomTripRegistrationForm() {
@@ -23,9 +28,16 @@ export function CustomTripRegistrationForm() {
   const [specialRequests, setSpecialRequests] = useState<string>('');
 
   const baseCostPerSeat = itinerary?.cost_breakdown.total ?? 0;
+  const displayCurrency = itinerary?.pricing?.currency ?? defaultPricingSelection.display_currency;
+  const displayBaseCostPerSeat =
+    itinerary?.pricing?.display_total ??
+    convertPkrToDisplay(baseCostPerSeat, displayCurrency);
   const totalAmount = useMemo(() => {
     return baseCostPerSeat * (Number(seats) || 0);
   }, [baseCostPerSeat, seats]);
+  const displayTotalAmount = useMemo(() => {
+    return displayBaseCostPerSeat * (Number(seats) || 0);
+  }, [displayBaseCostPerSeat, seats]);
 
   useEffect(() => {
     try {
@@ -75,6 +87,12 @@ export function CustomTripRegistrationForm() {
           trip_summary: itinerary.trip_summary,
           destinations: itinerary.destinations.map((destination) => destination.name),
           estimated_total: totalAmount,
+          pricing_market: itinerary.pricing?.market,
+          display_currency: itinerary.pricing?.currency,
+          exchange_rate: itinerary.pricing?.exchange_rate,
+          display_total: displayTotalAmount,
+          security_cost: itinerary.pricing?.breakdown_pkr.security,
+          service_cost: itinerary.pricing?.breakdown_pkr.service,
           special_requests: specialRequests || undefined,
         }),
       });
@@ -158,11 +176,16 @@ export function CustomTripRegistrationForm() {
           </div>
           <div className="flex items-center justify-between">
             <span>Budget</span>
-            <span>PKR {tripRequest.budget.toLocaleString()}</span>
+            <span>
+              {formatMoney(
+                convertPkrToDisplay(tripRequest.budget, displayCurrency),
+                displayCurrency,
+              )}
+            </span>
           </div>
           <div className="flex items-center justify-between">
             <span>Price per seat</span>
-            <span>PKR {baseCostPerSeat.toLocaleString()}</span>
+            <span>{formatMoney(displayBaseCostPerSeat, displayCurrency)}</span>
           </div>
           <div className="flex items-center justify-between">
             <span>Selected seats</span>
@@ -170,7 +193,7 @@ export function CustomTripRegistrationForm() {
           </div>
           <div className="flex items-center justify-between font-semibold text-slate-900">
             <span>Estimated total</span>
-            <span>PKR {totalAmount.toLocaleString()}</span>
+            <span>{formatMoney(displayTotalAmount, displayCurrency)}</span>
           </div>
           <div className="rounded-[20px] border border-slate-200 bg-white px-4 py-3">
             <p className="text-[11px] uppercase tracking-[0.22em] text-slate-500">Destinations</p>
@@ -262,11 +285,11 @@ export function CustomTripRegistrationForm() {
           <div className="flex items-center justify-between gap-4 text-sm text-slate-700">
             <span>Total payable</span>
             <span className="text-xl font-semibold text-slate-950">
-              PKR {totalAmount.toLocaleString()}
+              {formatMoney(displayTotalAmount, displayCurrency)}
             </span>
           </div>
           <p className="mt-2 text-xs text-slate-500">
-            PKR {baseCostPerSeat.toLocaleString()} per seat
+            {formatMoney(displayBaseCostPerSeat, displayCurrency)} per seat
           </p>
         </div>
 

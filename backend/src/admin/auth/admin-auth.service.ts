@@ -63,6 +63,13 @@ export class AdminAuthService {
     const adminUsername = process.env.ADMIN_USERNAME ?? 'admin';
     const adminPassword = process.env.ADMIN_PASSWORD ?? 'admin123';
 
+    if (
+      process.env.NODE_ENV === 'production' &&
+      (!process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD)
+    ) {
+      throw new UnauthorizedException('Admin credentials are not configured.');
+    }
+
     if (username !== adminUsername || password !== adminPassword) {
       throw new UnauthorizedException('Invalid admin credentials.');
     }
@@ -94,6 +101,10 @@ export class AdminAuthService {
   }
 
   private getSecret(): string {
+    if (process.env.NODE_ENV === 'production' && !process.env.ADMIN_TOKEN_SECRET) {
+      throw new UnauthorizedException('Admin token secret is not configured.');
+    }
+
     return process.env.ADMIN_TOKEN_SECRET ?? 'pakvoyage-admin-secret';
   }
 }

@@ -1,7 +1,5 @@
 import { Type } from 'class-transformer';
 import {
-  ArrayMinSize,
-  IsArray,
   IsEnum,
   IsInt,
   IsOptional,
@@ -9,24 +7,13 @@ import {
   Min,
 } from 'class-validator';
 import { DisplayCurrency, PricingMarket } from '../../pricing/pricing.types';
-import { TravelInterest } from '../travel-interest.enum';
 
-export class GenerateItineraryDto {
+export class QuotePackageDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(30)
-  readonly days!: number;
-
-  @Type(() => Number)
-  @IsInt()
-  @Min(1000)
-  readonly budget!: number;
-
-  @IsArray()
-  @ArrayMinSize(1)
-  @IsEnum(TravelInterest, { each: true })
-  readonly interests!: TravelInterest[];
+  @Max(10)
+  readonly seats!: number;
 
   @IsOptional()
   @IsEnum(PricingMarket)

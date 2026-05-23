@@ -6,7 +6,10 @@ import {
   IsString,
   Max,
   Min,
+  IsEnum,
 } from 'class-validator';
+import { DisplayCurrency, PricingMarket } from '../../pricing/pricing.types';
+import { PaymentStatus } from '@prisma/client';
 
 export class CreateBookingDto {
   @IsString()
@@ -40,4 +43,20 @@ export class CreateBookingDto {
   @IsOptional()
   @IsString()
   special_requests?: string;
+
+  @IsOptional()
+  @IsEnum(PricingMarket)
+  pricing_market?: PricingMarket;
+
+  @IsOptional()
+  @IsEnum(DisplayCurrency)
+  display_currency?: DisplayCurrency;
+
+  @IsOptional()
+  @IsEnum(PaymentStatus)
+  payment_status?: PaymentStatus;
+
+  @IsOptional()
+  @IsString()
+  payment_reference?: string;
 }

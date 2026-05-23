@@ -3,12 +3,14 @@ import {
   Itinerary,
   ItineraryDay,
 } from '@prisma/client';
+import { PricingQuote } from '../pricing/pricing.types';
 
 export interface GeneratedItineraryDay {
   day_number: number;
   destination: Destination;
   activities: string;
   cost: number;
+  pricing: PricingQuote;
 }
 
 export interface GeneratedCostBreakdown {
@@ -24,6 +26,7 @@ export interface GeneratedItineraryResponse {
   destinations: Destination[];
   itinerary_days: GeneratedItineraryDay[];
   cost_breakdown: GeneratedCostBreakdown;
+  pricing: PricingQuote;
 }
 
 export interface SavedItineraryResponse extends Itinerary {
@@ -44,6 +47,14 @@ export interface CustomTripRegistrationResponse {
   trip_summary: string;
   destinations: string[];
   estimated_total: number;
+  pricing_market: 'LOCAL_PK' | 'CHINA' | 'INTERNATIONAL';
+  display_currency: 'PKR' | 'USD' | 'CNY' | 'GBP' | 'AED' | 'SAR' | 'EUR';
+  exchange_rate: number;
+  display_total: number | null;
+  security_cost: number;
+  service_cost: number;
+  payment_status: 'UNPAID' | 'PARTIAL' | 'PAID' | 'REFUNDED';
+  payment_reference: string | null;
   status: 'PENDING' | 'CONFIRMED' | 'CANCELLED';
   special_requests: string | null;
   created_at: Date;

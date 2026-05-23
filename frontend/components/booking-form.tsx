@@ -1,8 +1,18 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { apiBaseUrl } from '@/lib/api';
 import { parseApiError } from '@/lib/api-error';
+import { PricingSelector } from '@/components/pricing-selector';
+import {
+  defaultPricingSelection,
+  estimatePackageTotal,
+  formatMoney,
+  PricingSelection,
+  PricingQuote,
+  readPricingSelection,
+  savePricingSelection,
+} from '@/lib/pricing';
 import { Booking, TourPackage } from '@/lib/types';
 
 interface BookingFormProps {
@@ -17,14 +27,67 @@ export function BookingForm({
   const [phone, setPhone] = useState<string>('');
   const [nationalId, setNationalId] = useState<string>('');
   const [seats, setSeats] = useState<string>('1');
+  const [pricingSelection, setPricingSelection] = useState<PricingSelection>(
+    defaultPricingSelection,
+  );
   const [specialRequests, setSpecialRequests] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [booking, setBooking] = useState<Booking | null>(null);
+  const [quote, setQuote] = useState<PricingQuote | null>(null);
 
-  const totalAmount = useMemo(() => {
-    return travelPackage.price_per_seat * Number(seats || 0);
-  }, [seats, travelPackage.price_per_seat]);
+  useEffect(() => {
+    setPricingSelection(readPricingSelection());
+  }, []);
+
+  const fallbackTotalAmount = useMemo(
+    () =>
+      estimatePackageTotal(
+        travelPackage.price_per_seat,
+        Number(seats || 0),
+        pricingSelection,
+      ),
+    [pricingSelection, seats, travelPackage.price_per_seat],
+  );
+
+  const totalAmount = quote?.display_total ?? fallbackTotalAmount;
+
+  const updatePricingSelection = (selection: PricingSelection): void => {
+    setPricingSelection(selection);
+    savePricingSelection(selection);
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    const params = new URLSearchParams({
+      seats: String(Number(seats || 1)),
+      pricing_market: pricingSelection.pricing_market,
+      display_currency: pricingSelection.display_currency,
+    });
+
+    fetch(`${apiBaseUrl}/packages/${travelPackage.id}/quote?${params.toString()}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Could not refresh package quote.');
+        }
+
+        return response.json() as Promise<PricingQuote>;
+      })
+      .then((nextQuote) => {
+        if (!cancelled) {
+          setQuote(nextQuote);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setQuote(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pricingSelection, seats, travelPackage.id]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -45,6 +108,7 @@ export function BookingForm({
           national_id: nationalId,
           seats: Number(seats),
           special_requests: specialRequests || undefined,
+          ...pricingSelection,
         }),
       });
 
@@ -79,7 +143,22 @@ export function BookingForm({
           Status: <span className="font-semibold text-slate-950">{booking.status}</span>
         </p>
         <p className="mt-3 text-sm leading-7 text-slate-700">
-          Total amount: <span className="font-semibold text-slate-950">PKR {booking.total_amount.toLocaleString()}</span>
+          Payment:{' '}
+          <span className="font-semibold text-slate-950">{booking.payment_status}</span>
+        </p>
+        <p className="mt-3 text-sm leading-7 text-slate-700">
+          Total amount:{' '}
+          <span className="font-semibold text-slate-950">
+            {booking.pricing
+              ? formatMoney(booking.pricing.display_total, booking.pricing.currency)
+              : `PKR ${booking.total_amount.toLocaleString()}`}
+          </span>
+        </p>
+        <p className="mt-3 text-sm leading-7 text-slate-700">
+          Market:{' '}
+          <span className="font-semibold text-slate-950">
+            {booking.pricing?.market ?? pricingSelection.pricing_market}
+          </span>
         </p>
         <p className="mt-5 rounded-[22px] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-6 text-emerald-800">
           We captured your booking request successfully. You can now follow up with your support or operations team using this booking ID.
@@ -161,13 +240,28 @@ export function BookingForm({
         </label>
       </div>
 
+      <div className="mt-4">
+        <PricingSelector
+          value={pricingSelection}
+          onChange={updatePricingSelection}
+          compact
+        />
+      </div>
+
       <div className="mt-5 rounded-[24px] border border-slate-200 bg-white px-5 py-5">
         <div className="flex items-center justify-between gap-4 text-sm text-slate-700">
           <span>Total payable</span>
           <span className="text-xl font-semibold text-slate-950">
-            PKR {totalAmount.toLocaleString()}
+            {formatMoney(totalAmount, pricingSelection.display_currency)}
           </span>
         </div>
+        <p className="mt-2 text-xs leading-5 text-slate-500">
+          Per seat:{' '}
+          {formatMoney(
+            estimatePackageTotal(travelPackage.price_per_seat, 1, pricingSelection),
+            pricingSelection.display_currency,
+          )}
+        </p>
       </div>
 
       {error ? (

@@ -48,6 +48,10 @@ export async function loginAdmin(
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      clearAdminToken();
+    }
+
     throw await parseApiError(response);
   }
 

@@ -14,7 +14,14 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
-import { BookingStatus, Destination, TourPackage } from '@prisma/client';
+import {
+  BookingStatus,
+  Destination,
+  DisplayCurrency,
+  PaymentStatus,
+  PricingMarket,
+  TourPackage,
+} from '@prisma/client';
 import {
   AdminOverview,
   AdminService,
@@ -37,7 +44,14 @@ interface AdminBookingResponse {
   national_id: string;
   seats: number;
   status: BookingStatus;
+  payment_status: PaymentStatus;
+  payment_reference: string | null;
   total_amount: number;
+  pricing_market: PricingMarket;
+  display_currency: DisplayCurrency;
+  exchange_rate: number;
+  display_total: number | null;
+  service_cost: number;
   special_requests: string | null;
   created_at: Date;
   package: {
@@ -61,6 +75,14 @@ interface AdminCustomRegistrationResponse {
   trip_summary: string;
   destinations: string[];
   estimated_total: number;
+  pricing_market: PricingMarket;
+  display_currency: DisplayCurrency;
+  exchange_rate: number;
+  display_total: number | null;
+  security_cost: number;
+  service_cost: number;
+  payment_status: PaymentStatus;
+  payment_reference: string | null;
   status: BookingStatus;
   special_requests: string | null;
   created_at: Date;

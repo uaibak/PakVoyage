@@ -1,6 +1,8 @@
+import { ReactNode } from 'react';
+
 interface StatPillProps {
   label: string;
-  value: string;
+  value: ReactNode;
   tone?: 'light' | 'dark';
 }
 

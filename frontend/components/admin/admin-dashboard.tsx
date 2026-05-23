@@ -33,6 +33,9 @@ export function AdminDashboard({
         <p className="mt-2 text-3xl text-slate-950 [font-family:var(--font-heading)]">
           PKR {(overview?.confirmed_revenue ?? 0).toLocaleString()}
         </p>
+        <p className="mt-2 text-xs leading-5 text-slate-500">
+          Includes confirmed package bookings and confirmed custom trip requests.
+        </p>
       </section>
       <section className="grid gap-4 xl:grid-cols-3">
         <article className="premium-card p-5">
