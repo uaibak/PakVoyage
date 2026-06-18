@@ -1,6 +1,14 @@
 import { CustomTripRegistrationForm } from '@/components/custom-trip-registration-form';
 
-export default function CustomTripRegisterPage() {
+interface CustomTripRegisterPageProps {
+  searchParams?: {
+    itinerary_id?: string;
+  };
+}
+
+export default function CustomTripRegisterPage({
+  searchParams,
+}: CustomTripRegisterPageProps) {
   return (
     <div className="shell py-16">
       <section className="premium-card-dark overflow-hidden px-8 py-10 md:px-12 md:py-14">
@@ -16,7 +24,7 @@ export default function CustomTripRegisterPage() {
       </section>
 
       <section className="mt-8">
-        <CustomTripRegistrationForm />
+        <CustomTripRegistrationForm itineraryId={searchParams?.itinerary_id} />
       </section>
     </div>
   );

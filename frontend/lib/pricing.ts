@@ -37,12 +37,12 @@ export const pricingMarkets: { label: string; value: PricingMarket; description:
   {
     label: 'China traveler',
     value: 'CHINA',
-    description: 'International handling with China-focused currency defaults.',
+    description: 'Premium hotels, private transport, guides, and China-focused handling.',
   },
   {
     label: 'International traveler',
     value: 'INTERNATIONAL',
-    description: 'International hotels, transport, service, and support rates.',
+    description: 'Higher-touch facilities, private support, handling, and service coverage.',
   },
 ];
 
@@ -84,8 +84,8 @@ const pkrToCurrencyRates: Record<DisplayCurrency, number> = {
 
 const packageMultiplierByMarket: Record<PricingMarket, number> = {
   LOCAL_PK: 1,
-  CHINA: 1.35,
-  INTERNATIONAL: 1.5,
+  CHINA: 2.15,
+  INTERNATIONAL: 2.45,
 };
 
 const storageKey = 'pakvoyage.pricingSelection';

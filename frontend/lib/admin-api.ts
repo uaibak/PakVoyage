@@ -8,7 +8,7 @@ import {
   AdminOverview,
   AdminPackage,
 } from './admin-types';
-import { BookingStatus } from './types';
+import { BookingStatus, PaymentStatus } from './types';
 
 export interface AdminData {
   profile: {
@@ -91,18 +91,30 @@ export async function updateAdminPackage(
 export async function updateAdminBookingStatus(
   id: string,
   status: BookingStatus,
+  payment_status?: PaymentStatus,
+  payment_reference?: string,
 ): Promise<AdminBooking> {
-  return sendJson<AdminBooking>(`/admin/bookings/${id}/status`, 'PATCH', { status });
+  return sendJson<AdminBooking>(`/admin/bookings/${id}/status`, 'PATCH', {
+    status,
+    payment_status,
+    payment_reference,
+  });
 }
 
 export async function updateAdminCustomRegistrationStatus(
   id: string,
   status: BookingStatus,
+  payment_status?: PaymentStatus,
+  payment_reference?: string,
 ): Promise<AdminCustomRegistration> {
   return sendJson<AdminCustomRegistration>(
     `/admin/custom-registrations/${id}/status`,
     'PATCH',
-    { status },
+    {
+      status,
+      payment_status,
+      payment_reference,
+    },
   );
 }
 

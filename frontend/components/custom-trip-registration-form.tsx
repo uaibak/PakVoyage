@@ -9,9 +9,89 @@ import {
   defaultPricingSelection,
   formatMoney,
 } from '@/lib/pricing';
-import { CustomTripRegistration, GeneratedItinerary, TripRequest } from '@/lib/types';
+import {
+  CustomTripRegistration,
+  GeneratedItinerary,
+  SavedItinerary,
+  TripRequest,
+} from '@/lib/types';
 
-export function CustomTripRegistrationForm() {
+interface CustomTripRegistrationFormProps {
+  itineraryId?: string;
+}
+
+function savedToGeneratedItinerary(saved: SavedItinerary): GeneratedItinerary {
+  const destinations = saved.itinerary_days
+    .map((day) => day.destination)
+    .filter(
+      (destination, index, all) =>
+        all.findIndex((item) => item.id === destination.id) === index,
+    );
+
+  return {
+    trip_summary: `${saved.days}-day route through ${destinations
+      .map((destination) => destination.name)
+      .join(', ')}`,
+    destinations,
+    itinerary_days: saved.itinerary_days.map((day) => ({
+      day_number: day.day_number,
+      destination: day.destination,
+      activities: day.activities,
+      cost: day.cost,
+    })),
+    cost_breakdown: {
+      hotel: saved.hotel_cost,
+      transport: saved.transport_cost,
+      food: saved.food_cost,
+      total: saved.total_cost,
+      is_within_budget: saved.total_cost <= saved.budget,
+    },
+    pricing: {
+      market: saved.pricing_market,
+      currency: saved.display_currency,
+      exchange_rate: saved.exchange_rate,
+      service_multiplier: 1,
+      base_total_pkr: saved.total_cost,
+      display_total:
+        saved.display_total ??
+        convertPkrToDisplay(saved.total_cost, saved.display_currency),
+      breakdown_pkr: {
+        hotel: saved.hotel_cost,
+        transport: saved.transport_cost,
+        food: saved.food_cost,
+        guide: 0,
+        security: saved.security_cost,
+        service: saved.service_cost,
+        total: saved.total_cost,
+      },
+      breakdown_display: {
+        hotel: convertPkrToDisplay(saved.hotel_cost, saved.display_currency),
+        transport: convertPkrToDisplay(saved.transport_cost, saved.display_currency),
+        food: convertPkrToDisplay(saved.food_cost, saved.display_currency),
+        guide: 0,
+        security: convertPkrToDisplay(saved.security_cost, saved.display_currency),
+        service: convertPkrToDisplay(saved.service_cost, saved.display_currency),
+        total:
+          saved.display_total ??
+          convertPkrToDisplay(saved.total_cost, saved.display_currency),
+      },
+    },
+  };
+}
+
+function savedToTripRequest(saved: SavedItinerary): TripRequest {
+  return {
+    days: saved.days,
+    budget: saved.budget,
+    interests: saved.interests,
+    pricing_market: saved.pricing_market,
+    display_currency: saved.display_currency,
+  };
+}
+
+export function CustomTripRegistrationForm({
+  itineraryId,
+}: CustomTripRegistrationFormProps) {
   const [itinerary, setItinerary] = useState<GeneratedItinerary | null>(null);
   const [tripRequest, setTripRequest] = useState<TripRequest | null>(null);
   const [savedItineraryId, setSavedItineraryId] = useState<string>('');
@@ -40,22 +120,53 @@ export function CustomTripRegistrationForm() {
   }, [displayBaseCostPerSeat, seats]);
 
   useEffect(() => {
-    try {
-      const storedItinerary = localStorage.getItem('pakvoyage.generatedItinerary');
-      const storedRequest = localStorage.getItem('pakvoyage.tripRequest');
-      const storedSavedItinerary = localStorage.getItem('pakvoyage.savedItineraryId');
+    const load = async (): Promise<void> => {
+      if (itineraryId) {
+        try {
+          const response = await fetch(`${apiBaseUrl}/itinerary/${itineraryId}`, {
+            cache: 'no-store',
+          });
 
-      setItinerary(
-        storedItinerary ? (JSON.parse(storedItinerary) as GeneratedItinerary) : null,
-      );
-      setTripRequest(storedRequest ? (JSON.parse(storedRequest) as TripRequest) : null);
-      setSavedItineraryId(storedSavedItinerary ?? '');
-    } catch {
-      setError('Custom itinerary data could not be read from your browser.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+          if (!response.ok) {
+            throw await parseApiError(response);
+          }
+
+          const saved = (await response.json()) as SavedItinerary;
+          setItinerary(savedToGeneratedItinerary(saved));
+          setTripRequest(savedToTripRequest(saved));
+          setSavedItineraryId(saved.id);
+          localStorage.setItem('pakvoyage.savedItineraryId', saved.id);
+          return;
+        } catch (requestError) {
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : 'Shared itinerary data could not be loaded.',
+          );
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      try {
+        const storedItinerary = localStorage.getItem('pakvoyage.generatedItinerary');
+        const storedRequest = localStorage.getItem('pakvoyage.tripRequest');
+        const storedSavedItinerary = localStorage.getItem('pakvoyage.savedItineraryId');
+
+        setItinerary(
+          storedItinerary ? (JSON.parse(storedItinerary) as GeneratedItinerary) : null,
+        );
+        setTripRequest(storedRequest ? (JSON.parse(storedRequest) as TripRequest) : null);
+        setSavedItineraryId(storedSavedItinerary ?? '');
+      } catch {
+        setError('Custom itinerary data could not be read from your browser.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void load();
+  }, [itineraryId]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();

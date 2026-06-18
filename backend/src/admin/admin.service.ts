@@ -259,7 +259,11 @@ export class AdminService {
         throw new NotFoundException(`Booking with ID "${id}" was not found.`);
       }
 
-      if (booking.status === dto.status) {
+      if (
+        booking.status === dto.status &&
+        dto.payment_status === undefined &&
+        dto.payment_reference === undefined
+      ) {
         return booking;
       }
 
@@ -341,7 +345,11 @@ export class AdminService {
         }) => Promise<AdminCustomRegistrationListItem | null>;
         update: (args: {
           where: { id: string };
-          data: { status: BookingStatus };
+          data: {
+            status: BookingStatus;
+            payment_status?: PaymentStatus;
+            payment_reference?: string;
+          };
         }) => Promise<AdminCustomRegistrationListItem>;
       };
     };
@@ -358,7 +366,11 @@ export class AdminService {
 
     return prismaWithCustomRegistration.customTripRegistration.update({
       where: { id },
-      data: { status: dto.status },
+      data: {
+        status: dto.status,
+        payment_status: dto.payment_status,
+        payment_reference: dto.payment_reference,
+      },
     });
   }
 

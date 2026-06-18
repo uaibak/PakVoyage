@@ -33,7 +33,7 @@ import {
   AdminOverview,
   AdminPackage,
 } from '@/lib/admin-types';
-import { BookingStatus } from '@/lib/types';
+import { BookingStatus, PaymentStatus } from '@/lib/types';
 
 type Section = 'overview' | 'content' | 'operations';
 type ContentTab = 'destinations' | 'packages';
@@ -522,13 +522,18 @@ export function AdminPortal() {
     }
   };
 
-  const patchBookingStatus = async (id: string, status: BookingStatus): Promise<void> => {
+  const patchBookingStatus = async (
+    id: string,
+    status: BookingStatus,
+    paymentStatus?: PaymentStatus,
+    paymentReference?: string,
+  ): Promise<void> => {
     setBusyId(id);
     setError('');
     setSuccess('');
     try {
-      await updateAdminBookingStatus(id, status);
-      setSuccess(`Booking ${id} updated to ${status}.`);
+      await updateAdminBookingStatus(id, status, paymentStatus, paymentReference);
+      setSuccess(`Booking ${id} updated.`);
       await refreshAll(false);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Could not update booking status.');
@@ -537,13 +542,23 @@ export function AdminPortal() {
     }
   };
 
-  const patchCustomStatus = async (id: string, status: BookingStatus): Promise<void> => {
+  const patchCustomStatus = async (
+    id: string,
+    status: BookingStatus,
+    paymentStatus?: PaymentStatus,
+    paymentReference?: string,
+  ): Promise<void> => {
     setBusyId(id);
     setError('');
     setSuccess('');
     try {
-      await updateAdminCustomRegistrationStatus(id, status);
-      setSuccess(`Registration ${id} updated to ${status}.`);
+      await updateAdminCustomRegistrationStatus(
+        id,
+        status,
+        paymentStatus,
+        paymentReference,
+      );
+      setSuccess(`Registration ${id} updated.`);
       await refreshAll(false);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Could not update registration status.');
@@ -967,8 +982,12 @@ export function AdminPortal() {
           bookings={filteredBookings}
           customRegistrations={filteredCustomRegistrations}
           busyId={busyId}
-          patchBookingStatus={(id, status) => void patchBookingStatus(id, status)}
-          patchCustomStatus={(id, status) => void patchCustomStatus(id, status)}
+          patchBookingStatus={(id, status, paymentStatus, paymentReference) =>
+            void patchBookingStatus(id, status, paymentStatus, paymentReference)
+          }
+          patchCustomStatus={(id, status, paymentStatus, paymentReference) =>
+            void patchCustomStatus(id, status, paymentStatus, paymentReference)
+          }
         />
       ) : null}
     </div>

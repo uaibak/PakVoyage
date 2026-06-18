@@ -13,7 +13,90 @@ import {
   TripRequest,
 } from '@/lib/types';
 
-export function ResultsView() {
+interface ResultsViewProps {
+  itineraryId?: string;
+}
+
+function savedToGeneratedItinerary(saved: SavedItinerary): GeneratedItinerary {
+  const destinations = saved.itinerary_days
+    .map((day) => day.destination)
+    .filter(
+      (destination, index, all) =>
+        all.findIndex((item) => item.id === destination.id) === index,
+    );
+  const destinationNames = destinations.map((destination) => destination.name);
+  const displayBreakdown = {
+    hotel: convertPkrToDisplay(saved.hotel_cost, saved.display_currency),
+    transport: convertPkrToDisplay(saved.transport_cost, saved.display_currency),
+    food: convertPkrToDisplay(saved.food_cost, saved.display_currency),
+    guide: 0,
+    security: convertPkrToDisplay(saved.security_cost, saved.display_currency),
+    service: convertPkrToDisplay(saved.service_cost, saved.display_currency),
+    total:
+      saved.display_total ??
+      convertPkrToDisplay(saved.total_cost, saved.display_currency),
+  };
+
+  return {
+    trip_summary: `${saved.days}-day route through ${destinationNames.join(', ')}`,
+    destinations,
+    itinerary_days: saved.itinerary_days.map((day) => ({
+      day_number: day.day_number,
+      destination: day.destination,
+      activities: day.activities,
+      cost: day.cost,
+    })),
+    cost_breakdown: {
+      hotel: saved.hotel_cost,
+      transport: saved.transport_cost,
+      food: saved.food_cost,
+      total: saved.total_cost,
+      is_within_budget: saved.total_cost <= saved.budget,
+    },
+    pricing: {
+      market: saved.pricing_market,
+      currency: saved.display_currency,
+      exchange_rate: saved.exchange_rate,
+      service_multiplier:
+        saved.total_cost > 0
+          ? saved.total_cost /
+            Math.max(
+              saved.hotel_cost +
+                saved.transport_cost +
+                saved.food_cost +
+                saved.security_cost,
+              1,
+            )
+          : 1,
+      base_total_pkr: saved.total_cost,
+      display_total:
+        saved.display_total ??
+        convertPkrToDisplay(saved.total_cost, saved.display_currency),
+      breakdown_pkr: {
+        hotel: saved.hotel_cost,
+        transport: saved.transport_cost,
+        food: saved.food_cost,
+        guide: 0,
+        security: saved.security_cost,
+        service: saved.service_cost,
+        total: saved.total_cost,
+      },
+      breakdown_display: displayBreakdown,
+    },
+  };
+}
+
+function savedToTripRequest(saved: SavedItinerary): TripRequest {
+  return {
+    days: saved.days,
+    budget: saved.budget,
+    interests: saved.interests,
+    pricing_market: saved.pricing_market,
+    display_currency: saved.display_currency,
+  };
+}
+
+export function ResultsView({ itineraryId }: ResultsViewProps) {
   const [itinerary, setItinerary] = useState<GeneratedItinerary | null>(null);
   const [tripRequest, setTripRequest] = useState<TripRequest | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -23,67 +106,105 @@ export function ResultsView() {
   const [savedItinerary, setSavedItinerary] = useState<SavedItinerary | null>(null);
 
   useEffect(() => {
-    try {
-      const storedItinerary = localStorage.getItem('pakvoyage.generatedItinerary');
-      const storedRequest = localStorage.getItem('pakvoyage.tripRequest');
+    const load = async (): Promise<void> => {
+      if (itineraryId) {
+        try {
+          const response = await fetch(`${apiBaseUrl}/itinerary/${itineraryId}`, {
+            cache: 'no-store',
+          });
 
-      setItinerary(
-        storedItinerary ? (JSON.parse(storedItinerary) as GeneratedItinerary) : null,
-      );
-      setTripRequest(storedRequest ? (JSON.parse(storedRequest) as TripRequest) : null);
-    } catch (err) {
-      console.error('Error reading local storage:', err);
-      setSaveError('The session data has been corrupted. Please try generating a new itinerary.');
-    } finally {
-      setLoading(false);
+          if (!response.ok) {
+            throw await parseApiError(response);
+          }
+
+          const saved = (await response.json()) as SavedItinerary;
+          setSavedItinerary(saved);
+          setItinerary(savedToGeneratedItinerary(saved));
+          setTripRequest(savedToTripRequest(saved));
+          localStorage.setItem('pakvoyage.savedItineraryId', saved.id);
+          return;
+        } catch (requestError) {
+          setSaveError(
+            requestError instanceof Error
+              ? requestError.message
+              : 'Could not load the shared itinerary.',
+          );
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      try {
+        const storedItinerary = localStorage.getItem('pakvoyage.generatedItinerary');
+        const storedRequest = localStorage.getItem('pakvoyage.tripRequest');
+        setItinerary(
+          storedItinerary ? (JSON.parse(storedItinerary) as GeneratedItinerary) : null,
+        );
+        setTripRequest(storedRequest ? (JSON.parse(storedRequest) as TripRequest) : null);
+      } catch (err) {
+        console.error('Error reading local storage:', err);
+        setSaveError('The session data has been corrupted. Please try generating a new itinerary.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void load();
+  }, [itineraryId]);
+
+  const saveItinerary = async (): Promise<SavedItinerary> => {
+    if (savedItinerary?.id) {
+      return savedItinerary;
     }
-  }, []);
+
+    if (!itinerary || !tripRequest) {
+      throw new Error('Generate an itinerary first before saving it.');
+    }
+
+    const response = await fetch(`${apiBaseUrl}/itinerary/save`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        days: tripRequest.days,
+        budget: tripRequest.budget,
+        interests: tripRequest.interests,
+        total_cost: itinerary.cost_breakdown.total,
+        hotel_cost: itinerary.cost_breakdown.hotel,
+        transport_cost: itinerary.cost_breakdown.transport,
+        food_cost: itinerary.cost_breakdown.food,
+        pricing_market: itinerary.pricing?.market,
+        display_currency: itinerary.pricing?.currency,
+        exchange_rate: itinerary.pricing?.exchange_rate,
+        display_total: itinerary.pricing?.display_total,
+        security_cost: itinerary.pricing?.breakdown_pkr.security,
+        service_cost: itinerary.pricing?.breakdown_pkr.service,
+        itinerary_days: itinerary.itinerary_days.map((day) => ({
+          day_number: day.day_number,
+          destination_id: day.destination.id,
+          activities: day.activities,
+          cost: day.cost,
+        })),
+      }),
+    });
+
+    if (!response.ok) {
+      throw await parseApiError(response);
+    }
+
+    const saved = (await response.json()) as SavedItinerary;
+    setSavedItinerary(saved);
+    localStorage.setItem('pakvoyage.savedItineraryId', saved.id);
+    return saved;
+  };
 
   const handleSave = async (): Promise<void> => {
-    if (!itinerary || !tripRequest) {
-      setSaveError('Generate an itinerary first before saving it.');
-      return;
-    }
-
     setSaving(true);
     setSaveError('');
 
     try {
-      const response = await fetch(`${apiBaseUrl}/itinerary/save`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          days: tripRequest.days,
-          budget: tripRequest.budget,
-          interests: tripRequest.interests,
-          total_cost: itinerary.cost_breakdown.total,
-          hotel_cost: itinerary.cost_breakdown.hotel,
-          transport_cost: itinerary.cost_breakdown.transport,
-          food_cost: itinerary.cost_breakdown.food,
-          pricing_market: itinerary.pricing?.market,
-          display_currency: itinerary.pricing?.currency,
-          exchange_rate: itinerary.pricing?.exchange_rate,
-          display_total: itinerary.pricing?.display_total,
-          security_cost: itinerary.pricing?.breakdown_pkr.security,
-          service_cost: itinerary.pricing?.breakdown_pkr.service,
-          itinerary_days: itinerary.itinerary_days.map((day) => ({
-            day_number: day.day_number,
-            destination_id: day.destination.id,
-            activities: day.activities,
-            cost: day.cost,
-          })),
-        }),
-      });
-
-      if (!response.ok) {
-        throw await parseApiError(response);
-      }
-
-      const saved = (await response.json()) as SavedItinerary;
-      setSavedItinerary(saved);
-      localStorage.setItem('pakvoyage.savedItineraryId', saved.id);
+      await saveItinerary();
     } catch (requestError) {
       setSaveError(
         requestError instanceof Error
@@ -120,10 +241,27 @@ export function ResultsView() {
     );
   };
 
-  const handleShare = () => {
+  const handleShare = async (): Promise<void> => {
     if (typeof window !== 'undefined') {
-      const url = window.location.href;
-      navigator.clipboard.writeText(url);
+      setSaving(true);
+      setSaveError('');
+
+      try {
+        const saved = await saveItinerary();
+        const url = `${window.location.origin}/results?id=${encodeURIComponent(saved.id)}`;
+        await navigator.clipboard.writeText(url);
+        window.history.replaceState(null, '', `/results?id=${encodeURIComponent(saved.id)}`);
+      } catch (requestError) {
+        setSaveError(
+          requestError instanceof Error
+            ? requestError.message
+            : 'Could not create a shareable itinerary link.',
+        );
+        setSaving(false);
+        return;
+      }
+
+      setSaving(false);
       setShareSuccess(true);
       setTimeout(() => setShareSuccess(false), 3000);
     }
@@ -350,6 +488,14 @@ export function ResultsView() {
               <Link href="/planner" className="cta-secondary w-full justify-center">
                 Plan another trip
               </Link>
+              <button
+                type="button"
+                onClick={() => void handleShare()}
+                disabled={saving}
+                className="cta-secondary w-full justify-center disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {saving ? 'Preparing link...' : 'Copy share link'}
+              </button>
             </div>
 
             {savedItinerary ? (
@@ -392,7 +538,11 @@ export function ResultsView() {
             </p>
             <div className="mt-5">
               <Link
-                href="/custom-trip/register"
+                href={
+                  savedItinerary?.id
+                    ? `/custom-trip/register?itinerary_id=${encodeURIComponent(savedItinerary.id)}`
+                    : '/custom-trip/register'
+                }
                 className="cta-primary w-full justify-center"
               >
                 Continue to registration form

@@ -1,7 +1,12 @@
+'use client';
+
+import { useState } from 'react';
 import { AdminBooking, AdminCustomRegistration } from '@/lib/admin-types';
-import { BookingStatus } from '@/lib/types';
+import { BookingStatus, PaymentStatus } from '@/lib/types';
 
 export type OpsTab = 'bookings' | 'custom';
+
+const paymentStatuses: PaymentStatus[] = ['UNPAID', 'PARTIAL', 'PAID', 'REFUNDED'];
 
 function formatDate(value: string): string {
   return new Date(value).toLocaleDateString('en-PK', {
@@ -47,8 +52,18 @@ export function AdminOperations({
   bookings: AdminBooking[];
   customRegistrations: AdminCustomRegistration[];
   busyId: string;
-  patchBookingStatus: (id: string, status: BookingStatus) => void;
-  patchCustomStatus: (id: string, status: BookingStatus) => void;
+  patchBookingStatus: (
+    id: string,
+    status: BookingStatus,
+    paymentStatus?: PaymentStatus,
+    paymentReference?: string,
+  ) => void;
+  patchCustomStatus: (
+    id: string,
+    status: BookingStatus,
+    paymentStatus?: PaymentStatus,
+    paymentReference?: string,
+  ) => void;
 }) {
   return (
     <div className="space-y-4">
@@ -129,8 +144,18 @@ function BookingCard({
   item: AdminBooking;
   busyId: string;
   statuses: BookingStatus[];
-  patchBookingStatus: (id: string, status: BookingStatus) => void;
+  patchBookingStatus: (
+    id: string,
+    status: BookingStatus,
+    paymentStatus?: PaymentStatus,
+    paymentReference?: string,
+  ) => void;
 }) {
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(item.payment_status);
+  const [paymentReference, setPaymentReference] = useState<string>(
+    item.payment_reference ?? '',
+  );
+
   return (
     <article className="rounded-[16px] border border-slate-200 bg-white p-4">
       <div className="flex justify-between items-start">
@@ -176,6 +201,21 @@ function BookingCard({
           </button>
         ))}
       </div>
+      <PaymentControls
+        busy={busyId === item.id}
+        paymentStatus={paymentStatus}
+        setPaymentStatus={setPaymentStatus}
+        paymentReference={paymentReference}
+        setPaymentReference={setPaymentReference}
+        onSave={() =>
+          patchBookingStatus(
+            item.id,
+            item.status,
+            paymentStatus,
+            paymentReference.trim(),
+          )
+        }
+      />
     </article>
   );
 }
@@ -189,8 +229,18 @@ function CustomRegistrationCard({
   item: AdminCustomRegistration;
   busyId: string;
   statuses: BookingStatus[];
-  patchCustomStatus: (id: string, status: BookingStatus) => void;
+  patchCustomStatus: (
+    id: string,
+    status: BookingStatus,
+    paymentStatus?: PaymentStatus,
+    paymentReference?: string,
+  ) => void;
 }) {
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(item.payment_status);
+  const [paymentReference, setPaymentReference] = useState<string>(
+    item.payment_reference ?? '',
+  );
+
   return (
     <article className="rounded-[16px] border border-slate-200 bg-white p-4">
       <div className="flex justify-between items-start">
@@ -204,7 +254,9 @@ function CustomRegistrationCard({
           {item.seats} seats | {item.days} days |{' '}
           {formatDisplayAmount(item.display_total, item.display_currency, item.estimated_total)}
         </p>
-        <p>Market: {item.pricing_market}</p>
+        <p>
+          Market: {item.pricing_market} | Payment: {item.payment_status}
+        </p>
         <p>PKR record: PKR {item.estimated_total.toLocaleString()}</p>
         <p>Budget: PKR {item.budget.toLocaleString()}</p>
         <p>{item.email}</p>
@@ -247,6 +299,67 @@ function CustomRegistrationCard({
           </button>
         ))}
       </div>
+      <PaymentControls
+        busy={busyId === item.id}
+        paymentStatus={paymentStatus}
+        setPaymentStatus={setPaymentStatus}
+        paymentReference={paymentReference}
+        setPaymentReference={setPaymentReference}
+        onSave={() =>
+          patchCustomStatus(
+            item.id,
+            item.status,
+            paymentStatus,
+            paymentReference.trim(),
+          )
+        }
+      />
     </article>
+  );
+}
+
+function PaymentControls({
+  busy,
+  paymentStatus,
+  setPaymentStatus,
+  paymentReference,
+  setPaymentReference,
+  onSave,
+}: {
+  busy: boolean;
+  paymentStatus: PaymentStatus;
+  setPaymentStatus: (status: PaymentStatus) => void;
+  paymentReference: string;
+  setPaymentReference: (reference: string) => void;
+  onSave: () => void;
+}) {
+  return (
+    <div className="mt-4 grid gap-3 rounded-[14px] border border-slate-200 bg-slate-50 p-3 md:grid-cols-[0.7fr_1fr_auto]">
+      <select
+        value={paymentStatus}
+        onChange={(event) => setPaymentStatus(event.target.value as PaymentStatus)}
+        className="rounded-[12px] border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+      >
+        {paymentStatuses.map((status) => (
+          <option key={status} value={status}>
+            {status}
+          </option>
+        ))}
+      </select>
+      <input
+        value={paymentReference}
+        onChange={(event) => setPaymentReference(event.target.value)}
+        placeholder="Payment reference"
+        className="rounded-[12px] border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+      />
+      <button
+        type="button"
+        disabled={busy}
+        onClick={onSave}
+        className="rounded-[12px] border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        Save payment
+      </button>
+    </div>
   );
 }

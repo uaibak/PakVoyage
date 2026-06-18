@@ -16,11 +16,11 @@
     "prisma:migrate": "prisma migrate deploy",
     "db:seed": "ts-node prisma/seed.ts",
     "lint": "tsc --noEmit -p tsconfig.json",
-    "test": "node -e \"console.log('No automated tests configured yet.')\"",
-    "test:watch": "node -e \"console.log('No automated tests configured yet.')\"",
-    "test:cov": "node -e \"console.log('No automated tests configured yet.')\"",
-    "test:debug": "node -e \"console.log('No automated tests configured yet.')\"",
-    "test:e2e": "node -e \"console.log('No automated tests configured yet.')\""
+    "test": "npm run build && node --test test/*.test.js",
+    "test:watch": "node --watch --test test/*.test.js",
+    "test:cov": "npm run test",
+    "test:debug": "node --inspect --test test/*.test.js",
+    "test:e2e": "npm run test"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
