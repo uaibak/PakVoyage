@@ -29,11 +29,13 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
   line-height: 1.5;
   background: linear-gradient(180deg, #faf7f1 0%, #f5efe5 100%);
   color: var(--foreground);
@@ -74,7 +76,7 @@ textarea::placeholder {
 
 @layer components {
   .shell {
-    @apply mx-auto w-full max-w-6xl px-6;
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
   }
 
   .section-space {
@@ -131,5 +133,44 @@ textarea::placeholder {
       linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
       linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
     background-size: 72px 72px;
+  }
+}
+
+@media (max-width: 639px) {
+  *,
+  *::before,
+  *::after {
+    min-width: 0;
+  }
+
+  h1,
+  h2,
+  h3,
+  p,
+  a,
+  button,
+  span {
+    overflow-wrap: anywhere;
+  }
+
+  .premium-card,
+  .premium-card-dark {
+    border-radius: 24px;
+    max-width: 100%;
+  }
+
+  .shell > .premium-card,
+  .shell > .premium-card-dark,
+  .shell > section.premium-card,
+  .shell > section.premium-card-dark {
+    width: calc(100vw - 2rem) !important;
+    max-width: calc(100vw - 2rem) !important;
+  }
+
+  .premium-card-dark h1,
+  .premium-card-dark h2 {
+    font-size: clamp(2.15rem, 10.5vw, 2.65rem);
+    line-height: 1.05;
+    max-width: 100%;
   }
 }

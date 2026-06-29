@@ -43,8 +43,8 @@ export default async function PackagesPage({ searchParams }: PackagesPageProps) 
   const packages = await getPackages(searchParams);
 
   return (
-    <div className="shell py-16">
-      <section className="premium-card-dark overflow-hidden px-8 py-12 md:px-12 md:py-16">
+    <div className="shell py-10 md:py-16">
+      <section className="premium-card-dark overflow-hidden px-5 py-8 sm:px-8 sm:py-12 md:px-12 md:py-16">
         <SectionHeading
           eyebrow="Travel packages"
           title="Choose a fixed departure and reserve your seat with confidence."
@@ -85,7 +85,7 @@ export default async function PackagesPage({ searchParams }: PackagesPageProps) 
             placeholder="Travel month"
             className="rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
           />
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <input
               type="number"
               min={0}

@@ -152,14 +152,14 @@ export function PlannerForm() {
   };
 
   return (
-    <div className="shell py-16">
-      <div className="premium-card-dark overflow-hidden p-8 md:p-10">
+    <div className="shell py-10 md:py-16">
+      <div className="premium-card-dark overflow-hidden p-5 sm:p-8 md:p-10">
         <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-emerald-200">
               Build your route
             </p>
-            <h1 className="mt-5 max-w-3xl text-5xl leading-[0.95] text-white md:text-6xl [font-family:var(--font-heading)]">
+            <h1 className="mt-5 max-w-3xl text-4xl leading-[0.98] text-white sm:text-5xl md:text-6xl [font-family:var(--font-heading)]">
               Shape a Pakistan itinerary that feels tailored, practical, and worth the journey.
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-slate-200">
@@ -192,7 +192,7 @@ export function PlannerForm() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="premium-card p-7 md:p-8">
+          <form onSubmit={handleSubmit} className="premium-card p-5 sm:p-7 md:p-8">
             <div className="space-y-7">
               <div>
                 <p className="eyebrow">Trip frame</p>

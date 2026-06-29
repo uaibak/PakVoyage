@@ -9,13 +9,13 @@ const navItems = [
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-black/5 bg-[rgba(250,247,241,0.96)] backdrop-blur-xl">
-      <div className="shell flex items-center justify-between py-4">
-        <Link href="/" className="group flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(21,55,42,0.12)] bg-[rgba(255,252,247,0.86)] text-sm font-bold text-[var(--pine)] shadow-[var(--shadow-soft)]">
+      <div className="shell flex items-center justify-between gap-4 py-4">
+        <Link href="/" className="group flex min-w-0 items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[rgba(21,55,42,0.12)] bg-[rgba(255,252,247,0.86)] text-sm font-bold text-[var(--pine)] shadow-[var(--shadow-soft)]">
             PV
           </div>
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--emerald)]">
+          <div className="min-w-0">
+            <p className="truncate text-[11px] uppercase tracking-[0.28em] text-[var(--emerald)]">
               Pakistan Travel Planner
             </p>
             <p className="text-2xl leading-none text-[var(--pine)] [font-family:var(--font-heading)]">
@@ -35,7 +35,7 @@ export function SiteHeader() {
               </Link>
             ))}
           </nav>
-          <Link href="/planner" className="cta-primary">
+          <Link href="/planner" className="cta-primary hidden sm:inline-flex">
             Plan trip
           </Link>
         </div>

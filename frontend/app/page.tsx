@@ -49,13 +49,13 @@ export default async function HomePage() {
   return (
     <div className="pb-20">
       <section className="section-space shell">
-        <div className="premium-card-dark relative overflow-hidden px-8 py-12 md:px-12 md:py-16">
+        <div className="premium-card-dark relative overflow-hidden px-5 py-8 sm:px-8 sm:py-12 md:px-12 md:py-16">
           <div className="relative grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
             <div>
               <p className="text-xs uppercase tracking-[0.32em] text-emerald-200">
                 Pakistan trip planning
               </p>
-              <h1 className="mt-6 max-w-4xl text-5xl leading-[0.95] text-white md:text-7xl [font-family:var(--font-heading)]">
+              <h1 className="mt-6 max-w-4xl text-4xl leading-[0.98] text-white sm:text-5xl md:text-7xl [font-family:var(--font-heading)]">
                 Plan your Pakistan trip in minutes.
               </h1>
               <p className="mt-6 max-w-2xl text-base leading-8 text-slate-100">
@@ -63,7 +63,7 @@ export default async function HomePage() {
                 cost estimates, and helps you book confidently.
               </p>
 
-              <div className="mt-10 flex flex-wrap gap-4">
+              <div className="mt-10 flex flex-wrap gap-3 sm:gap-4">
                 <Link href="/planner" className="cta-primary">
                   Start planning
                 </Link>
